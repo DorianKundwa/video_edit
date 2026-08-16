@@ -1,0 +1,179 @@
+{
+  // ─────────────────────────────────────────────────────────────────
+  //  OUTPUT SETTINGS
+  // ─────────────────────────────────────────────────────────────────
+  outPath: "./output.mp4",   // Where to save the final video
+  width: 1920,               // Output width  (px)
+  height: 1080,              // Output height (px) — use 1080 for 16:9, 1920 for 9:16 (portrait)
+  fps: 30,                   // Frames per second
+
+  // ─────────────────────────────────────────────────────────────────
+  //  GLOBAL DEFAULTS  (apply to every clip unless overridden)
+  // ─────────────────────────────────────────────────────────────────
+  defaults: {
+    duration: 4,             // Default clip duration in seconds (used for images/titles)
+    transition: {
+      duration: 0.5,         // Transition length in seconds between clips
+      name: "fade",          // Transition style — options: "fade", "directional-left",
+                             // "directional-right", "directional-up", "directional-down",
+                             // "random", "dummy", or any gl-transition name from
+                             // https://gl-transitions.com/gallery
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  //  BACKGROUND MUSIC  (optional — remove if not needed)
+  // ─────────────────────────────────────────────────────────────────
+  // audioFilePath: "./music/background.mp3",
+  // loopAudio: true,         // Loop music if shorter than the video?
+  // keepSourceAudio: false,  // Keep audio from video clips?
+
+  // ─────────────────────────────────────────────────────────────────
+  //  CLIPS  — Add one object per clip. They play in order.
+  //
+  //  Each clip has:
+  //    description  → your own note (ignored by editly, just for you)
+  //    duration     → how long this clip lasts on screen (seconds)
+  //    transition   → override the global transition for this clip
+  //    layers       → what appears on screen (stacked bottom to top)
+  // ─────────────────────────────────────────────────────────────────
+  clips: [
+
+    // ── CLIP 1 · Title card ───────────────────────────────────────
+    {
+      description: "Opening title — 3 seconds",
+      duration: 3,
+      layers: [
+        { type: "fill-color", color: "#111111" },    // Dark background
+        {
+          type: "title",
+          text: "My Video Title",
+          textColor: "#ffffff",
+          position: "center",                        // "top" | "center" | "bottom"
+        },
+      ],
+    },
+
+    // ── CLIP 2 · Image ────────────────────────────────────────────
+    {
+      description: "First photo — show for 5 seconds",
+      duration: 5,                                   // ← change this to control display time
+      layers: [
+        {
+          type: "image",
+          path: "./media/photo1.jpg",                // ← path to your image
+          resizeMode: "cover",                       // "cover" | "contain" | "contain-blur" | "stretch"
+        },
+        // Optional: overlay a caption on the image
+        // { type: "subtitle", text: "Paris, June 2024", textColor: "#eeeeee" },
+      ],
+    },
+
+    // ── CLIP 3 · Image ────────────────────────────────────────────
+    {
+      description: "Second photo — show for 4 seconds",
+      duration: 4,
+      layers: [
+        {
+          type: "image",
+          path: "./media/photo2.jpg",
+          resizeMode: "cover",
+        },
+      ],
+    },
+
+    // ── CLIP 4 · Video clip (specific segment) ────────────────────
+    {
+      description: "Drone footage — use seconds 10–25 of the source file",
+      // No duration here → editly uses the length of cutTo - cutFrom automatically
+      layers: [
+        {
+          type: "video",
+          path: "./media/drone.mp4",                 // ← path to your video file
+          cutFrom: 10,                               // ← start cutting from this second
+          cutTo: 25,                                 // ← stop cutting at this second
+          resizeMode: "cover",
+          mixVolume: 1,                              // 0 = mute clip audio, 1 = full volume
+        },
+        // Optional: overlay text on the video
+        // { type: "subtitle", text: "Aerial view", textColor: "#ffffff" },
+      ],
+    },
+
+    // ── CLIP 5 · Video clip (full clip, no trim) ──────────────────
+    {
+      description: "Interview clip — play the whole file",
+      layers: [
+        {
+          type: "video",
+          path: "./media/interview.mp4",
+          // No cutFrom / cutTo → plays the entire file
+          resizeMode: "contain-blur",                // Blurred bars fill empty space
+          mixVolume: 1,
+        },
+      ],
+      // Override just this clip's transition:
+      transition: { duration: 0, name: "dummy" },   // Hard cut — no transition
+    },
+
+    // ── CLIP 6 · Image with Ken Burns zoom effect ─────────────────
+    {
+      description: "Slow zoom-in on landscape photo — 6 seconds",
+      duration: 6,
+      layers: [
+        {
+          type: "image",
+          path: "./media/landscape.jpg",
+          resizeMode: "cover",
+          // Ken Burns effect (slow pan/zoom):
+          zoomDirection: "in",                       // "in" | "out" | "left" | "right" | null
+          zoomAmount: 0.1,                           // How much to zoom (0.1 = 10%)
+        },
+      ],
+    },
+
+    // ── CLIP 7 · Title card (outro) ───────────────────────────────
+    {
+      description: "End card — 3 seconds",
+      duration: 3,
+      layers: [
+        { type: "radial-gradient", colors: ["#1a1a2e", "#16213e"] },
+        { type: "title", text: "Thanks for watching!", textColor: "#ffffff" },
+      ],
+    },
+
+    // ─────────────────────────────────────────────────────────────
+    //  COPY-PASTE SNIPPETS — add more clips below using these:
+    //
+    //  IMAGE:
+    //  {
+    //    description: "...",
+    //    duration: 4,
+    //    layers: [{ type: "image", path: "./media/YOURFILE.jpg", resizeMode: "cover" }],
+    //  },
+    //
+    //  VIDEO SEGMENT:
+    //  {
+    //    description: "...",
+    //    layers: [{
+    //      type: "video",
+    //      path: "./media/YOURFILE.mp4",
+    //      cutFrom: 0,   // start second
+    //      cutTo: 10,    // end second
+    //      resizeMode: "cover",
+    //    }],
+    //  },
+    //
+    //  TITLE CARD:
+    //  {
+    //    description: "...",
+    //    duration: 3,
+    //    layers: [
+    //      { type: "fill-color", color: "#000000" },
+    //      { type: "title", text: "Your Text", textColor: "#ffffff" },
+    //    ],
+    //  },
+    // ─────────────────────────────────────────────────────────────
+
+  ],
+}
