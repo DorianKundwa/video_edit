@@ -8,6 +8,13 @@ editly/dist/
 # npm logs
 npm-debug.log*
 
+# SEA build artifacts (regenerate with: powershell -File build-exe.ps1)
+VideoEditStudio.exe
+sea-prep.blob
+
+# Output video
+output.mp4
+
 # OS files
 .DS_Store
 Thumbs.db
