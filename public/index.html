@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Edit Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #07070e;
+      --bg1:       #0e0e1a;
+      --bg2:       #14141f;
+      --bg3:       #1c1c2a;
+      --border:    rgba(255,255,255,0.07);
+      --border-hi: rgba(255,255,255,0.13);
+      --text:      #e8e8f0;
+      --text-dim:  #7070a0;
+      --text-muted:#45455a;
+      --amber:     #f5a623;
+      --amber-dim: #c4821a;
+      --amber-glow:rgba(245,166,35,0.15);
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --radius:    10px;
+      --radius-lg: 16px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow: hidden;
+    }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .app {
+      display: grid;
+      grid-template-rows: 56px 1fr;
+      grid-template-columns: 320px 1fr;
+      height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 24px;
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--amber), var(--amber-dim));
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+    }
+
+    .logo-text {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-text span { color: var(--amber); }
+
+    .header-sep { flex: 1; }
+
+    .header-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: background 0.3s;
+    }
+    .status-dot.ready  { background: var(--green); }
+    .status-dot.busy   { background: var(--amber); animation: pulse 1.2s infinite; }
+    .status-dot.error  { background: var(--red); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    .sidebar {
+      background: var(--bg1);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .count-badge {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--amber);
+    }
+
+    .image-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .image-list::-webkit-scrollbar { width: 4px; }
+    .image-list::-webkit-scrollbar-track { background: transparent; }
+    .image-list::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 4px; }
+
+    .image-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 18px;
+      cursor: default;
+      transition: background 0.15s;
+      border-bottom: 1px solid transparent;
+    }
+
+    .image-item:hover { background: var(--bg2); }
+
+    .img-thumb {
+      width: 44px; height: 30px;
+      border-radius: 5px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .img-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .img-thumb-placeholder {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .ts-badge {
+      background: var(--amber-glow);
+      border: 1px solid rgba(245,166,35,0.3);
+      color: var(--amber);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .img-name {
+      font-size: 12px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    /* ── Main ────────────────────────────────────────────── */
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+    }
+
+    .main-top {
+      padding: 20px 24px 16px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Audio card */
+    .audio-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .audio-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .audio-info { flex: 1; min-width: 0; }
+    .audio-name {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .audio-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+    /* Generate button */
+    .generate-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 24px;
+      height: 46px;
+      background: linear-gradient(135deg, var(--amber), var(--amber-dim));
+      color: #000;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      box-shadow: 0 4px 20px rgba(245,166,35,0.3);
+    }
+
+    .generate-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(245,166,35,0.4);
+    }
+
+    .generate-btn:active:not(:disabled) { transform: translateY(0); }
+
+    .generate-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .generate-btn .btn-icon { font-size: 16px; }
+
+    .cancel-btn {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 0 20px;
+      height: 46px;
+      background: var(--bg3);
+      border: 1px solid var(--border-hi);
+      color: var(--text-dim);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .cancel-btn:hover { background: var(--bg2); color: var(--text); }
+    .cancel-btn.visible { display: flex; }
+
+    /* ── Main bottom: progress + video ───────────────────── */
+    .main-bottom {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+      padding: 20px 24px;
+      gap: 20px;
+    }
+
+    /* Progress panel */
+    .progress-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .progress-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px 0;
+    }
+
+    .progress-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .progress-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--amber);
+      transition: all 0.3s;
+    }
+
+    .progress-bar-wrap {
+      margin: 10px 16px 0;
+      height: 4px;
+      background: var(--bg3);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--amber-dim), var(--amber));
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .log-output {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 12px 16px;
+      height: 100px;
+      overflow-y: auto;
+      line-height: 1.7;
+    }
+
+    .log-output::-webkit-scrollbar { width: 3px; }
+    .log-output::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+
+    .log-line { white-space: pre-wrap; word-break: break-all; }
+    .log-line.info  { color: var(--text-dim); }
+    .log-line.done  { color: var(--green); }
+    .log-line.error { color: var(--red); }
+
+    .log-placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Video player ─────────────────────────────────────── */
+    .video-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .video-wrap {
+      flex: 1;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 0;
+    }
+
+    .video-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+    }
+
+    .video-empty-icon { font-size: 36px; opacity: 0.4; }
+    .video-empty-text { font-size: 13px; }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    video.loaded { display: block; }
+
+    /* download bar */
+    .video-actions {
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .video-actions.visible { display: flex; }
+
+    .download-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--bg3);
+      border: 1px solid var(--border-hi);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .download-btn:hover { background: var(--bg2); }
+
+    .output-meta { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎬</div>
+      <span class="logo-text">Video Edit <span>Studio</span></span>
+    </div>
+    <div class="header-sep"></div>
+    <div class="header-badge">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Loading...</span>
+    </div>
+  </header>
+
+  <!-- ── Sidebar: image list ──────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Source Images</span>
+      <span class="count-badge" id="imgCount">—</span>
+    </div>
+    <div class="image-list" id="imageList">
+      <div class="image-item" style="justify-content:center;padding:30px">
+        <span style="color:var(--text-muted);font-size:12px">Loading images...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main ─────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- top controls -->
+    <div class="main-top">
+
+      <!-- Audio card -->
+      <div class="audio-card">
+        <div class="audio-icon">🎵</div>
+        <div class="audio-info">
+          <div class="audio-name" id="audioName">Loading...</div>
+          <div class="audio-meta" id="audioMeta">—</div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <button class="generate-btn" id="generateBtn" onclick="startGeneration()">
+        <span class="btn-icon">▶</span> Generate Video
+      </button>
+
+      <button class="cancel-btn" id="cancelBtn" onclick="cancelGeneration()">
+        ✕ Cancel
+      </button>
+
+    </div>
+
+    <!-- progress + video -->
+    <div class="main-bottom">
+
+      <!-- Progress panel -->
+      <div class="progress-panel">
+        <div class="progress-header">
+          <span class="progress-label">Render Progress</span>
+          <span class="progress-pct" id="progressPct">—</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+        <div class="log-output" id="logOutput">
+          <div class="log-line log-placeholder">Press Generate to start rendering...</div>
+        </div>
+      </div>
+
+      <!-- Video section -->
+      <div class="video-section">
+        <div class="section-label">Output Preview</div>
+
+        <div class="video-actions" id="videoActions">
+          <a class="download-btn" href="/output.mp4" download="output.mp4">⬇ Download MP4</a>
+          <span class="output-meta" id="outputMeta"></span>
+        </div>
+
+        <div class="video-wrap" id="videoWrap">
+          <div class="video-empty" id="videoEmpty">
+            <div class="video-empty-icon">🎞</div>
+            <div class="video-empty-text">Output video will appear here</div>
+          </div>
+          <video id="videoPlayer" controls preload="metadata"></video>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  let es = null; // EventSource
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  async function init() {
+    await Promise.all([loadImages(), loadInfo()]);
+  }
+
+  // ── Load image list ───────────────────────────────────────────────────────
+  async function loadImages() {
+    try {
+      const r = await fetch('/api/images');
+      const data = await r.json();
+      renderImageList(data.images || []);
+      document.getElementById('imgCount').textContent = data.count ?? '0';
+    } catch (e) {
+      document.getElementById('imageList').innerHTML =
+        `<div style="padding:20px;color:var(--red);font-size:12px">Error loading images</div>`;
+    }
+  }
+
+  function renderImageList(images) {
+    const list = document.getElementById('imageList');
+    if (!images.length) {
+      list.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center">No images found</div>';
+      return;
+    }
+    list.innerHTML = images.map(img => `
+      <div class="image-item" title="${img.name}">
+        <div class="img-thumb">
+          <img src="/image/${encodeURIComponent(img.name)}"
+               loading="lazy"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
+               alt="" />
+          <span class="img-thumb-placeholder" style="display:none">🖼</span>
+        </div>
+        <span class="ts-badge">${img.timestamp.label}</span>
+        <span class="img-name">${img.name.replace(/^\[\d+-\d+\]_?/, '')}</span>
+      </div>
+    `).join('');
+  }
+
+  // ── Load info (audio + output) ────────────────────────────────────────────
+  async function loadInfo() {
+    try {
+      const r = await fetch('/api/info');
+      const data = await r.json();
+
+      // Audio
+      if (data.audio) {
+        document.getElementById('audioName').textContent = data.audio.name;
+        document.getElementById('audioMeta').textContent = formatBytes(data.audio.size) + ' · MP3';
+      } else {
+        document.getElementById('audioName').textContent = 'No audio file found';
+        document.getElementById('audioMeta').textContent = 'Expected: audio/untitled.mp3';
+      }
+
+      // Output
+      if (data.output) showVideo(data.output);
+
+      // Status
+      setStatus(data.isGenerating ? 'busy' : 'ready', data.isGenerating ? 'Generating...' : 'Ready');
+    } catch(e) {
+      setStatus('error', 'Server error');
+    }
+  }
+
+  // ── Show video ────────────────────────────────────────────────────────────
+  function showVideo(meta) {
+    const player = document.getElementById('videoPlayer');
+    const empty  = document.getElementById('videoEmpty');
+    const actions = document.getElementById('videoActions');
+    const outputMeta = document.getElementById('outputMeta');
+
+    // Cache-bust so it reloads after regeneration
+    player.src = '/output.mp4?t=' + Date.now();
+    player.classList.add('loaded');
+    empty.style.display = 'none';
+    actions.classList.add('visible');
+
+    if (meta?.size) {
+      outputMeta.textContent = formatBytes(meta.size);
+    }
+    if (meta?.mtime) {
+      outputMeta.textContent += ' · Generated ' + new Date(meta.mtime).toLocaleString();
+    }
+  }
+
+  // ── Generate ──────────────────────────────────────────────────────────────
+  function startGeneration() {
+    if (es) { es.close(); es = null; }
+
+    // Reset UI
+    const log = document.getElementById('logOutput');
+    log.innerHTML = '';
+    setProgress(0);
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('cancelBtn').classList.add('visible');
+    setStatus('busy', 'Generating...');
+
+    es = new EventSource('/api/generate');
+    // EventSource uses GET; for POST we use fetch + ReadableStream instead
+    es.close();
+
+    // Use fetch + SSE manually (POST)
+    fetch('/api/generate', { method: 'POST' }).then(async res => {
+      if (!res.ok) {
+        const err = await res.json();
+        appendLog(err.error || 'Failed to start', 'error');
+        resetControls();
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        // Process SSE lines
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const evt = JSON.parse(line.slice(6));
+              handleEvent(evt);
+            } catch {}
+          }
+        }
+      }
+      resetControls();
+    }).catch(e => {
+      appendLog('Connection error: ' + e.message, 'error');
+      resetControls();
+    });
+  }
+
+  function handleEvent(evt) {
+    switch (evt.type) {
+      case 'start':
+        appendLog(evt.message, 'info');
+        break;
+      case 'progress':
+        setProgress(evt.percent);
+        break;
+      case 'log':
+        if (evt.message) appendLog(evt.message, 'info');
+        break;
+      case 'done':
+        setProgress(100);
+        appendLog(evt.message, 'done');
+        setStatus('ready', 'Ready');
+        document.getElementById('cancelBtn').classList.remove('visible');
+        document.getElementById('generateBtn').disabled = false;
+        // Refresh video
+        showVideo({ size: evt.outputSize, mtime: new Date() });
+        break;
+      case 'error':
+        appendLog(evt.message, 'error');
+        setStatus('error', 'Error');
+        resetControls();
+        break;
+    }
+  }
+
+  // ── Cancel ────────────────────────────────────────────────────────────────
+  async function cancelGeneration() {
+    await fetch('/api/cancel', { method: 'POST' });
+    appendLog('⚠ Generation cancelled.', 'error');
+    resetControls();
+  }
+
+  function resetControls() {
+    document.getElementById('generateBtn').disabled = false;
+    document.getElementById('cancelBtn').classList.remove('visible');
+    setStatus('ready', 'Ready');
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function setStatus(type, text) {
+    const dot  = document.getElementById('statusDot');
+    const span = document.getElementById('statusText');
+    dot.className = 'status-dot ' + type;
+    span.textContent = text;
+  }
+
+  function setProgress(pct) {
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+  }
+
+  function appendLog(msg, type = 'info') {
+    if (!msg) return;
+    const log = document.getElementById('logOutput');
+    const line = document.createElement('div');
+    line.className = 'log-line ' + type;
+    line.textContent = msg;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes) return '—';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  init();
+</script>
+</body>
+</html>
