@@ -1,16 +1,13 @@
 'use strict';
 // Video Edit Studio — SEA Launcher
-// This executable starts server.mjs and opens the browser.
+// Starts server.mjs on a random OS-assigned port, then opens the browser.
 
 const { spawn } = require('child_process');
 const { get }   = require('http');
 const { exec }  = require('child_process');
 const path      = require('path');
 
-// ── Project directory = folder where this .exe lives ─────────────────────────
 const PROJECT_DIR = path.dirname(process.execPath);
-const PORT        = 3000;
-const SERVER_URL  = `http://localhost:${PORT}`;
 
 // Set terminal title
 try { process.stdout.write('\x1b]0;Video Edit Studio\x07'); } catch {}
@@ -19,8 +16,7 @@ console.log('\n  ╔════════════════════
 console.log('  ║        🎬  Video Edit Studio          ║');
 console.log('  ╚══════════════════════════════════════╝\n');
 console.log(`  📁  Project : ${PROJECT_DIR}`);
-console.log(`  🌐  URL     : ${SERVER_URL}`);
-console.log('  ℹ️   Press Ctrl+C to stop the server\n');
+console.log('  🌐  URL     : (waiting for server...)\n');
 
 // ── Start the backend server ──────────────────────────────────────────────────
 const server = spawn('node', ['server.mjs'], {
@@ -28,7 +24,28 @@ const server = spawn('node', ['server.mjs'], {
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 
-server.stdout.on('data', d => process.stdout.write(d));
+let serverURL = null;
+let portFound = false;
+
+server.stdout.on('data', d => {
+  const text = d.toString();
+
+  // Intercept the parseable port line emitted by server.mjs
+  if (!portFound) {
+    const match = text.match(/LISTENING_ON_PORT:(\d+)/);
+    if (match) {
+      portFound  = true;
+      serverURL  = `http://localhost:${match[1]}`;
+      process.stdout.write(`  🌐  URL     : ${serverURL}\n\n`);
+      openBrowser(serverURL);
+    }
+  }
+
+  // Forward all other stdout lines (skip the internal port marker)
+  const filtered = text.replace(/LISTENING_ON_PORT:\d+\n?/, '');
+  if (filtered.trim()) process.stdout.write(filtered);
+});
+
 server.stderr.on('data', d => process.stderr.write(d));
 
 server.on('error', err => {
@@ -42,25 +59,10 @@ server.on('exit', code => {
   process.exit(code || 0);
 });
 
-// ── Poll until server responds, then open browser ─────────────────────────────
-function waitAndOpen(attempts) {
-  const req = get(SERVER_URL, () => {
-    console.log('  ✅  Server ready — opening browser...\n');
-    exec(`start "" "${SERVER_URL}"`);
-  });
-
-  req.on('error', () => {
-    if (attempts > 0) setTimeout(() => waitAndOpen(attempts - 1), 400);
-    else exec(`start "" "${SERVER_URL}"`); // open anyway as fallback
-  });
-
-  req.setTimeout(300, () => {
-    req.destroy();
-    if (attempts > 0) setTimeout(() => waitAndOpen(attempts - 1), 400);
-  });
+// ── Open browser ──────────────────────────────────────────────────────────────
+function openBrowser(url) {
+  exec(`start "" "${url}"`);
 }
-
-setTimeout(() => waitAndOpen(30), 800);
 
 // ── Graceful shutdown ──────────────────────────────────────────────────────────
 process.on('SIGINT',  () => { server.kill('SIGTERM'); setTimeout(() => process.exit(0), 800); });

@@ -7,7 +7,7 @@ import { spawn } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const PORT       = 3000;
+const PORT        = 0;         // 0 = OS picks a random free port
 const IMAGE_DIR  = path.join(__dirname, 'image');
 const AUDIO_PATH = path.join(__dirname, 'audio', 'untitled.mp3');
 const OUTPUT_PATH = path.join(__dirname, 'output.mp4');
@@ -194,5 +194,8 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n🎬 Video Edit Studio running at http://localhost:${PORT}\n`);
+  const { port } = server.address();
+  // Emit a parseable line so the launcher knows which port was chosen
+  process.stdout.write(`LISTENING_ON_PORT:${port}\n`);
+  console.log(`\n🎬 Video Edit Studio running at http://localhost:${port}\n`);
 });
