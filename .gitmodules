@@ -1,0 +1,3 @@
+[submodule "editly"]
+	path = editly
+	url = https://github.com/mifi/editly.git

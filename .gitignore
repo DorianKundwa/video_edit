@@ -1,0 +1,13 @@
+# Node modules
+node_modules/
+editly/node_modules/
+
+# Build output
+editly/dist/
+
+# npm logs
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
