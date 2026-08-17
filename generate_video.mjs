@@ -3,7 +3,7 @@
 // computes each clip's duration, then renders directly with native FFmpeg.
 
 import { readdirSync, existsSync, writeFileSync, unlinkSync } from 'fs';
-import { resolve, dirname, join } from 'path';
+import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync, spawn } from 'child_process';
 
@@ -15,6 +15,7 @@ const OUTPUT_PATH = resolve(__dirname, 'output.mp4');
 const CONCAT_FILE = resolve(__dirname, 'concat_list.txt');
 
 const isFast = process.argv.includes('--fast');
+const is2K   = process.argv.includes('--2k');
 
 // ── Helper: Get audio duration dynamically with ffprobe ────────────────────
 function getAudioDuration(filePath) {
@@ -32,25 +33,6 @@ function getAudioDuration(filePath) {
     console.warn('ffprobe duration check failed, using fallback:', e.message);
   }
   return 600;
-}
-
-// ── Helper: Detect native image dimensions with ffprobe ─────────────────────
-function getImageDimensions(filePath) {
-  try {
-    const stdout = execSync(
-      `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "${filePath}"`,
-      { encoding: 'utf-8' }
-    ).trim();
-    const parts = stdout.split('x').map(x => parseInt(x, 10));
-    if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-      const w = parts[0] % 2 === 0 ? parts[0] : parts[0] + 1;
-      const h = parts[1] % 2 === 0 ? parts[1] : parts[1] + 1;
-      return { width: w, height: h };
-    }
-  } catch (e) {
-    console.warn('ffprobe image dimension check failed, using fallback:', e.message);
-  }
-  return { width: 1920, height: 1080 };
 }
 
 const AUDIO_DURATION = getAudioDuration(AUDIO_PATH);
@@ -80,24 +62,26 @@ if (images.length === 0) {
   process.exit(1);
 }
 
-// Detect resolution from source images
-const firstImagePath = resolve(IMAGE_DIR, images[0].name);
-const nativeDimensions = getImageDimensions(firstImagePath);
+// Resolution Selection (Crystal Clear 1080p Full HD or 2K QHD)
+let outWidth = 1920;
+let outHeight = 1080;
 
-const width = isFast ? Math.round(nativeDimensions.width / 2) : nativeDimensions.width;
-const height = isFast ? Math.round(nativeDimensions.height / 2) : nativeDimensions.height;
-// Ensure even numbers for H.264 encoder
-const outWidth = width % 2 === 0 ? width : width + 1;
-const outHeight = height % 2 === 0 ? height : height + 1;
-const fps = isFast ? 15 : 30;
+if (is2K) {
+  outWidth = 2560;
+  outHeight = 1440;
+} else if (isFast) {
+  outWidth = 1280;
+  outHeight = 720;
+}
+
+const fps = isFast ? 24 : 30;
 const preset = isFast ? 'ultrafast' : 'veryfast';
 
 const totalMin = Math.floor(AUDIO_DURATION / 60);
 const totalSec = Math.floor(AUDIO_DURATION % 60);
 console.log(`📸 Found ${images.length} timestamped images, spanning ${images[0].startSec}s → ${images.at(-1).startSec}s`);
-console.log(`📐 Image source resolution: ${nativeDimensions.width}x${nativeDimensions.height} → Output: ${outWidth}x${outHeight} @ ${fps}fps`);
+console.log(`📐 Render Target: ${outWidth}x${outHeight} @ ${fps}fps (${is2K ? '2K QHD' : isFast ? '720p HD Preview' : '1080p Full HD'})`);
 console.log(`🎵 Audio duration: ${AUDIO_DURATION.toFixed(2)}s (${totalMin}m ${totalSec}s)`);
-console.log(`⚡ Mode: ${isFast ? `FAST PREVIEW (${outWidth}x${outHeight} @ ${fps}fps)` : `NATIVE QUALITY (${outWidth}x${outHeight} @ ${fps}fps)`}`);
 
 // ── 2. Build FFmpeg Concat Script & Interval Tree ─────────────────────────
 const concatLines = ['ffconcat version 1.0'];
@@ -108,7 +92,6 @@ for (let i = 0; i < images.length; i++) {
   const nextStart = i < images.length - 1 ? images[i + 1].startSec : AUDIO_DURATION;
   const duration = Math.max(nextStart - img.startSec, 0.1);
   const fullPath = resolve(IMAGE_DIR, img.name).replace(/\\/g, '/');
-  // Escape single quotes for ffmpeg concat demuxer
   const escapedPath = fullPath.replace(/'/g, "'\\''");
 
   concatLines.push(`file '${escapedPath}'`);
@@ -116,17 +99,17 @@ for (let i = 0; i < images.length; i++) {
   intervals.push({ start: img.startSec, end: nextStart, dur: duration });
 }
 
-// FFmpeg concat demuxer requires the last file to be repeated without duration
+// Last file repeated for concat demuxer requirement
 const lastImgPath = resolve(IMAGE_DIR, images.at(-1).name).replace(/\\/g, '/').replace(/'/g, "'\\''");
 concatLines.push(`file '${lastImgPath}'`);
 
 writeFileSync(CONCAT_FILE, concatLines.join('\n'), 'utf-8');
 
-// Build logarithmic binary search tree expression for smooth Ken Burns zoom (1.0 -> 1.08x per clip)
+// Build logarithmic binary search tree expression for smooth Ken Burns zoom
 function buildZoomTree(items) {
   if (items.length === 1) {
     const { start, dur } = items[0];
-    return `1+0.08*clip((it-${start})/${dur.toFixed(3)},0,1)`;
+    return `1+0.07*clip((it-${start})/${dur.toFixed(3)},0,1)`;
   }
   const mid = Math.floor(items.length / 2);
   const left = items.slice(0, mid);
@@ -137,15 +120,19 @@ function buildZoomTree(items) {
 
 const zoomExpr = buildZoomTree(intervals);
 
-// ── 3. Render via FFmpeg with cinematic zoom & fade-in/out ─────────────────
+// ── 3. Render via FFmpeg with supersampled smooth zoom & cinematic fade ───
 const fadeDuration = 1.5; // 1.5s cinematic smooth fade
 const fadeOutStart = Math.max(0, AUDIO_DURATION - fadeDuration);
 
-// Background blur + foreground smooth Ken Burns zoom + cinematic fade in & out
+// Background blur dimensions
 const bgW = Math.max(160, Math.round(outWidth / 4));
 const bgH = Math.max(90, Math.round(outHeight / 4));
 
-const videoFilter = `[0:v]fps=${fps},` +
+// 2x supersampling for jitter-free subpixel zoom precision
+const superW = outWidth * 2;
+const superH = outHeight * 2;
+
+const videoFilter = `[0:v]fps=${fps},scale=${superW}:${superH}:flags=bicubic,` +
   `zoompan=z='${zoomExpr}':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${outWidth}x${outHeight}:fps=${fps},` +
   `split=2[bg][fg];` +
   `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
@@ -165,7 +152,7 @@ const ffmpegArgs = [
   ...(hasAudio ? ['-map', '1:a:0', '-af', audioFilter, '-c:a', 'aac', '-b:a', '192k'] : []),
   '-c:v', 'libx264',
   '-preset', preset,
-  '-crf', '18',
+  '-crf', '17', // High quality crisp encoding
   '-movflags', 'faststart',
   '-shortest',
   '-y',
@@ -173,7 +160,7 @@ const ffmpegArgs = [
   '-progress', 'pipe:1',
 ];
 
-console.log('\n🎬 Starting native FFmpeg render with Ken Burns zoom & cinematic fade...');
+console.log(`\n🎬 Starting native FFmpeg render (${outWidth}x${outHeight} @ ${fps}fps, CRF 17)...`);
 
 await new Promise((resolvePromise, rejectPromise) => {
   const proc = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
