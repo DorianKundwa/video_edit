@@ -62,7 +62,7 @@ if (images.length === 0) {
   process.exit(1);
 }
 
-// Resolution Selection (Crystal Clear 1080p Full HD or 2K QHD)
+// Resolution Selection (Crisp 1080p Full HD default or 2K QHD)
 let outWidth = 1920;
 let outHeight = 1080;
 
@@ -105,22 +105,22 @@ concatLines.push(`file '${lastImgPath}'`);
 
 writeFileSync(CONCAT_FILE, concatLines.join('\n'), 'utf-8');
 
-// Build logarithmic binary search tree expression for smooth Ken Burns zoom
+// Build logarithmic binary search tree expression for butter-smooth Ken Burns zoom
 function buildZoomTree(items) {
   if (items.length === 1) {
     const { start, dur } = items[0];
-    return `1+0.07*clip((it-${start})/${dur.toFixed(3)},0,1)`;
+    return `0.06*clip((t-${start})/${dur.toFixed(3)},0,1)`;
   }
   const mid = Math.floor(items.length / 2);
   const left = items.slice(0, mid);
   const right = items.slice(mid);
   const splitTime = left[left.length - 1].end;
-  return `if(lt(it,${splitTime}),${buildZoomTree(left)},${buildZoomTree(right)})`;
+  return `if(lt(t,${splitTime}),${buildZoomTree(left)},${buildZoomTree(right)})`;
 }
 
 const zoomExpr = buildZoomTree(intervals);
 
-// ── 3. Render via FFmpeg with supersampled smooth zoom & cinematic fade ───
+// ── 3. Render via FFmpeg with smooth continuous scaling & cinematic fade ──
 const fadeDuration = 1.5; // 1.5s cinematic smooth fade
 const fadeOutStart = Math.max(0, AUDIO_DURATION - fadeDuration);
 
@@ -128,15 +128,13 @@ const fadeOutStart = Math.max(0, AUDIO_DURATION - fadeDuration);
 const bgW = Math.max(160, Math.round(outWidth / 4));
 const bgH = Math.max(90, Math.round(outHeight / 4));
 
-// 2x supersampling for jitter-free subpixel zoom precision
-const superW = outWidth * 2;
-const superH = outHeight * 2;
+// Continuous bicubic frame scaling without zoompan integer pixel stepping
+const scaleW = `trunc(${outWidth}*(1+${zoomExpr})/2)*2`;
+const scaleH = `trunc(${outHeight}*(1+${zoomExpr})/2)*2`;
 
-const videoFilter = `[0:v]fps=${fps},scale=${superW}:${superH}:flags=bicubic,` +
-  `zoompan=z='${zoomExpr}':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${outWidth}x${outHeight}:fps=${fps},` +
-  `split=2[bg][fg];` +
+const videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
   `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
-  `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];` +
+  `[fg]scale='${scaleW}':'${scaleH}':force_original_aspect_ratio=decrease:eval=frame:flags=bicubic[fgscaled];` +
   `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,fade=t=in:st=0:d=${fadeDuration}:color=black,fade=t=out:st=${fadeOutStart.toFixed(2)}:d=${fadeDuration}:color=black,format=yuv420p[v]`;
 
 const audioFilter = `afade=t=in:st=0:d=${fadeDuration},afade=t=out:st=${fadeOutStart.toFixed(2)}:d=${fadeDuration}`;
