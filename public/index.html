@@ -791,12 +791,6 @@
         </button>
       </div>
 
-      <!-- Ken Burns Zoom Toggle -->
-      <div class="toggle-wrap active" id="zoomToggle" onclick="toggleZoom()" title="Smooth Ken Burns subtle zoom-in motion across each image">
-        <div class="toggle-switch"></div>
-        <span>🔍 Ken Burns Zoom</span>
-      </div>
-
       <!-- Generate button -->
       <button class="generate-btn" id="generateBtn" onclick="startGeneration()">
         <span class="spinner"></span>
@@ -856,7 +850,6 @@
 <script>
   let allImages = [];
   let selectedResolution = '1080p';
-  let isZoomEnabled = true;
   let abortCtrl = null;
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -958,11 +951,6 @@
     });
   }
 
-  function toggleZoom() {
-    isZoomEnabled = !isZoomEnabled;
-    document.getElementById('zoomToggle').classList.toggle('active', isZoomEnabled);
-  }
-
   // ── Show video ────────────────────────────────────────────────────────────
   function showVideo(meta) {
     const player = document.getElementById('videoPlayer');
@@ -1001,7 +989,6 @@
 
     const query = new URLSearchParams({
       res: selectedResolution,
-      zoom: isZoomEnabled,
     });
 
     fetch(`/api/generate?${query.toString()}`, {

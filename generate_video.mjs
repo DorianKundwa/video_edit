@@ -16,7 +16,6 @@ const CONCAT_FILE = resolve(__dirname, 'concat_list.txt');
 
 const isFast = process.argv.includes('--fast');
 const is2K   = process.argv.includes('--2k');
-const noZoom = process.argv.includes('--no-zoom') || process.argv.includes('--zoom=false');
 
 // ── Helper: Get audio duration dynamically with ffprobe ────────────────────
 function getAudioDuration(filePath) {
@@ -84,9 +83,8 @@ console.log(`📸 Found ${images.length} timestamped images, spanning ${images[0
 console.log(`📐 Render Target: ${outWidth}x${outHeight} @ ${fps}fps (${is2K ? '2K QHD' : isFast ? '720p HD Preview' : '1080p Full HD'})`);
 console.log(`🎵 Audio duration: ${AUDIO_DURATION.toFixed(2)}s (${totalMin}m ${totalSec}s)`);
 
-// ── 2. Build FFmpeg Concat Script & Interval Tree ─────────────────────────
+// ── 2. Build FFmpeg Concat Script ─────────────────────────────────────────
 const concatLines = ['ffconcat version 1.0'];
-const intervals = [];
 
 for (let i = 0; i < images.length; i++) {
   const img = images[i];
@@ -97,7 +95,6 @@ for (let i = 0; i < images.length; i++) {
 
   concatLines.push(`file '${escapedPath}'`);
   concatLines.push(`duration ${duration.toFixed(3)}`);
-  intervals.push({ start: img.startSec, end: nextStart, dur: duration });
 }
 
 // Last file repeated for concat demuxer requirement
@@ -106,37 +103,13 @@ concatLines.push(`file '${lastImgPath}'`);
 
 writeFileSync(CONCAT_FILE, concatLines.join('\n'), 'utf-8');
 
-// Build logarithmic binary search tree expression for butter-smooth Ken Burns zoom
-function buildZoomTree(items) {
-  if (items.length === 1) {
-    const { start, dur } = items[0];
-    return `0.06*clip((t-${start})/${dur.toFixed(3)},0,1)`;
-  }
-  const mid = Math.floor(items.length / 2);
-  const left = items.slice(0, mid);
-  const right = items.slice(mid);
-  const splitTime = left[left.length - 1].end;
-  return `if(lt(t,${splitTime}),${buildZoomTree(left)},${buildZoomTree(right)})`;
-}
-
-const zoomExpr = noZoom ? '0' : buildZoomTree(intervals);
-
-// ── 3. Render via FFmpeg with smooth continuous scaling ──────────────────
-// Background blur dimensions
+// ── 3. Render via FFmpeg with clean background blur and sharp centered images ─
 const bgW = Math.max(160, Math.round(outWidth / 4));
 const bgH = Math.max(90, Math.round(outHeight / 4));
 
-// Continuous bicubic frame scaling without zoompan integer pixel stepping
-const scaleW = noZoom ? `${outWidth}` : `trunc(${outWidth}*(1+${zoomExpr})/2)*2`;
-const scaleH = noZoom ? `${outHeight}` : `trunc(${outHeight}*(1+${zoomExpr})/2)*2`;
-
-const fgFilter = noZoom
-  ? `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];`
-  : `[fg]scale='${scaleW}':'${scaleH}':force_original_aspect_ratio=decrease:eval=frame:flags=bicubic[fgscaled];`;
-
 const videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
   `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
-  fgFilter +
+  `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];` +
   `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,format=yuv420p[v]`;
 
 const hasAudio = existsSync(AUDIO_PATH);
