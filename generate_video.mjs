@@ -16,6 +16,7 @@ const CONCAT_FILE = resolve(__dirname, 'concat_list.txt');
 
 const isFast = process.argv.includes('--fast');
 const is2K   = process.argv.includes('--2k');
+const noZoom = process.argv.includes('--no-zoom') || process.argv.includes('--zoom=false');
 
 // ── Helper: Get audio duration dynamically with ffprobe ────────────────────
 function getAudioDuration(filePath) {
@@ -118,7 +119,7 @@ function buildZoomTree(items) {
   return `if(lt(t,${splitTime}),${buildZoomTree(left)},${buildZoomTree(right)})`;
 }
 
-const zoomExpr = buildZoomTree(intervals);
+const zoomExpr = noZoom ? '0' : buildZoomTree(intervals);
 
 // ── 3. Render via FFmpeg with smooth continuous scaling ──────────────────
 // Background blur dimensions
@@ -126,12 +127,16 @@ const bgW = Math.max(160, Math.round(outWidth / 4));
 const bgH = Math.max(90, Math.round(outHeight / 4));
 
 // Continuous bicubic frame scaling without zoompan integer pixel stepping
-const scaleW = `trunc(${outWidth}*(1+${zoomExpr})/2)*2`;
-const scaleH = `trunc(${outHeight}*(1+${zoomExpr})/2)*2`;
+const scaleW = noZoom ? `${outWidth}` : `trunc(${outWidth}*(1+${zoomExpr})/2)*2`;
+const scaleH = noZoom ? `${outHeight}` : `trunc(${outHeight}*(1+${zoomExpr})/2)*2`;
+
+const fgFilter = noZoom
+  ? `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];`
+  : `[fg]scale='${scaleW}':'${scaleH}':force_original_aspect_ratio=decrease:eval=frame:flags=bicubic[fgscaled];`;
 
 const videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
   `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
-  `[fg]scale='${scaleW}':'${scaleH}':force_original_aspect_ratio=decrease:eval=frame:flags=bicubic[fgscaled];` +
+  fgFilter +
   `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,format=yuv420p[v]`;
 
 const hasAudio = existsSync(AUDIO_PATH);

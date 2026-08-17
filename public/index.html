@@ -369,7 +369,60 @@
       margin-top: 1px;
     }
 
-    /* Quality / Fast toggle */
+    /* Resolution Selector */
+    .res-group {
+      display: flex;
+      align-items: center;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px;
+      gap: 3px;
+    }
+
+    .res-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--text-dim);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .res-btn:hover:not(.active) {
+      color: var(--text);
+      background: var(--bg3);
+    }
+
+    .res-btn.active {
+      background: linear-gradient(135deg, var(--amber-light), var(--amber));
+      color: #000;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+    }
+
+    .engine-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green);
+      white-space: nowrap;
+    }
+
+    /* Motion / Ken Burns toggle */
     .toggle-wrap {
       display: flex;
       align-items: center;
@@ -383,6 +436,7 @@
       color: var(--text-dim);
       cursor: pointer;
       user-select: none;
+      white-space: nowrap;
     }
 
     .toggle-switch {
@@ -679,6 +733,9 @@
       <div class="logo-icon">🎬</div>
       <span class="logo-text">Video Edit <span>Studio</span></span>
     </a>
+    <div class="engine-badge" title="High-performance C / AVX2 multi-threaded rendering pipeline">
+      <span>⚡</span> Native FFmpeg Turbo
+    </div>
     <div class="header-sep"></div>
     <div class="header-actions">
       <button class="icon-btn" title="Refresh data" onclick="init()">🔄</button>
@@ -721,10 +778,23 @@
         </div>
       </div>
 
-      <!-- Fast preview mode toggle -->
-      <div class="toggle-wrap" id="fastToggle" onclick="toggleFastMode()" title="Fast preview renders at 360p 15fps in seconds for rapid verification">
+      <!-- Resolution Selector -->
+      <div class="res-group" id="resGroup">
+        <button class="res-btn" data-res="720p" onclick="setResolution('720p')" title="720p HD Draft (Fastest preview in ~1 min)">
+          <span>⚡</span> 720p Draft
+        </button>
+        <button class="res-btn active" data-res="1080p" onclick="setResolution('1080p')" title="1080p Full HD (Crisp quality)">
+          <span>🌟</span> 1080p Full HD
+        </button>
+        <button class="res-btn" data-res="2k" onclick="setResolution('2k')" title="2K QHD 1440p (Ultra fidelity)">
+          <span>🚀</span> 2K QHD
+        </button>
+      </div>
+
+      <!-- Ken Burns Zoom Toggle -->
+      <div class="toggle-wrap active" id="zoomToggle" onclick="toggleZoom()" title="Smooth Ken Burns subtle zoom-in motion across each image">
         <div class="toggle-switch"></div>
-        <span>Fast Preview (Draft)</span>
+        <span>🔍 Ken Burns Zoom</span>
       </div>
 
       <!-- Generate button -->
@@ -785,7 +855,8 @@
 
 <script>
   let allImages = [];
-  let isFastMode = false;
+  let selectedResolution = '1080p';
+  let isZoomEnabled = true;
   let abortCtrl = null;
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -879,9 +950,17 @@
     }
   }
 
-  function toggleFastMode() {
-    isFastMode = !isFastMode;
-    document.getElementById('fastToggle').classList.toggle('active', isFastMode);
+  // ── UI Controls ───────────────────────────────────────────────────────────
+  function setResolution(res) {
+    selectedResolution = res;
+    document.querySelectorAll('.res-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.res === res);
+    });
+  }
+
+  function toggleZoom() {
+    isZoomEnabled = !isZoomEnabled;
+    document.getElementById('zoomToggle').classList.toggle('active', isZoomEnabled);
   }
 
   // ── Show video ────────────────────────────────────────────────────────────
@@ -910,11 +989,22 @@
     log.innerHTML = '';
     setProgress(0);
     setGeneratingState(true);
-    setStatus('busy', isFastMode ? 'Fast Rendering...' : 'Rendering 1080p...');
+
+    const modeLabels = {
+      '720p': 'Draft 720p',
+      '1080p': '1080p Full HD',
+      '2k': '2K QHD',
+    };
+    setStatus('busy', `Rendering ${modeLabels[selectedResolution] || selectedResolution}...`);
 
     abortCtrl = new AbortController();
 
-    fetch(`/api/generate?fast=${isFastMode}`, {
+    const query = new URLSearchParams({
+      res: selectedResolution,
+      zoom: isZoomEnabled,
+    });
+
+    fetch(`/api/generate?${query.toString()}`, {
       method: 'POST',
       signal: abortCtrl.signal,
     }).then(async res => {

@@ -171,14 +171,25 @@ const server = http.createServer((req, res) => {
 
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
-    const isFast = url.searchParams.get('fast') === 'true';
-    send({
-      type: 'start',
-      message: `🚀 Starting video generation in ${isFast ? 'FAST PREVIEW' : 'HIGH QUALITY (1080p)'} mode...`,
-    });
+    const resolution = url.searchParams.get('res') || (url.searchParams.get('fast') === 'true' ? '720p' : '1080p');
+    const zoomEnabled = url.searchParams.get('zoom') !== 'false';
 
     const args = ['generate_video.mjs'];
-    if (isFast) args.push('--fast');
+    if (resolution === '720p' || url.searchParams.get('fast') === 'true') {
+      args.push('--fast');
+    } else if (resolution === '2k') {
+      args.push('--2k');
+    }
+
+    if (!zoomEnabled) {
+      args.push('--no-zoom');
+    }
+
+    const modeLabel = resolution === '2k' ? '2K QHD (1440p)' : resolution === '720p' ? '720p HD DRAFT' : '1080p FULL HD';
+    send({
+      type: 'start',
+      message: `🚀 Starting video generation in ${modeLabel} mode (${zoomEnabled ? 'Ken Burns Zoom: ON' : 'Static Slide'}) via Native FFmpeg...`,
+    });
 
     activeProc = spawn('node', args, { cwd: __dirname });
 
