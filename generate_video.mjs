@@ -120,10 +120,7 @@ function buildZoomTree(items) {
 
 const zoomExpr = buildZoomTree(intervals);
 
-// ── 3. Render via FFmpeg with smooth continuous scaling & cinematic fade ──
-const fadeDuration = 1.5; // 1.5s cinematic smooth fade
-const fadeOutStart = Math.max(0, AUDIO_DURATION - fadeDuration);
-
+// ── 3. Render via FFmpeg with smooth continuous scaling ──────────────────
 // Background blur dimensions
 const bgW = Math.max(160, Math.round(outWidth / 4));
 const bgH = Math.max(90, Math.round(outHeight / 4));
@@ -135,9 +132,7 @@ const scaleH = `trunc(${outHeight}*(1+${zoomExpr})/2)*2`;
 const videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
   `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
   `[fg]scale='${scaleW}':'${scaleH}':force_original_aspect_ratio=decrease:eval=frame:flags=bicubic[fgscaled];` +
-  `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,fade=t=in:st=0:d=${fadeDuration}:color=black,fade=t=out:st=${fadeOutStart.toFixed(2)}:d=${fadeDuration}:color=black,format=yuv420p[v]`;
-
-const audioFilter = `afade=t=in:st=0:d=${fadeDuration},afade=t=out:st=${fadeOutStart.toFixed(2)}:d=${fadeDuration}`;
+  `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,format=yuv420p[v]`;
 
 const hasAudio = existsSync(AUDIO_PATH);
 const ffmpegArgs = [
@@ -147,7 +142,7 @@ const ffmpegArgs = [
   ...(hasAudio ? ['-i', AUDIO_PATH] : []),
   '-filter_complex', videoFilter,
   '-map', '[v]',
-  ...(hasAudio ? ['-map', '1:a:0', '-af', audioFilter, '-c:a', 'aac', '-b:a', '192k'] : []),
+  ...(hasAudio ? ['-map', '1:a:0', '-c:a', 'aac', '-b:a', '192k'] : []),
   '-c:v', 'libx264',
   '-preset', preset,
   '-crf', '17', // High quality crisp encoding
