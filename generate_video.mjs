@@ -1,18 +1,18 @@
 // generate_video.mjs
 // Reads images from ./image/, parses [M-SS] timestamps from filenames,
-// computes each clip's duration, then runs editly with the audio track.
+// computes each clip's duration, then renders directly with native FFmpeg.
 
-import { readdirSync, existsSync } from 'fs';
+import { readdirSync, existsSync, writeFileSync, unlinkSync } from 'fs';
 import { resolve, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
-import editly from './editly/dist/index.js';
+import { execSync, spawn } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const IMAGE_DIR   = resolve(__dirname, 'image');
 const AUDIO_PATH  = resolve(__dirname, 'audio/untitled.mp3');
 const OUTPUT_PATH = resolve(__dirname, 'output.mp4');
+const CONCAT_FILE = resolve(__dirname, 'concat_list.txt');
 
 const isFast = process.argv.includes('--fast');
 
@@ -38,7 +38,6 @@ const AUDIO_DURATION = getAudioDuration(AUDIO_PATH);
 
 // ── 1. Collect & sort images by timestamp ──────────────────────────────────
 function parseTimestamp(filename) {
-  // Matches [M-SS] or [MM-SS] at the start of the filename
   const m = filename.match(/^\[(\d+)-(\d+)\]/);
   if (!m) return null;
   const min = parseInt(m[1], 10);
@@ -68,44 +67,111 @@ console.log(`📸 Found ${images.length} timestamped images, spanning ${images[0
 console.log(`🎵 Audio duration: ${AUDIO_DURATION.toFixed(2)}s (${totalMin}m ${totalSec}s)`);
 console.log(`⚡ Mode: ${isFast ? 'FAST PREVIEW (640x360 @ 15fps)' : 'HIGH QUALITY (1920x1080 @ 30fps)'}`);
 
-// ── 2. Build editly clips — each image lasts until the next one starts ─────
-const clips = images.map((img, i) => {
+// ── 2. Build FFmpeg Concat Script ─────────────────────────────────────────
+const concatLines = ['ffconcat version 1.0'];
+
+for (let i = 0; i < images.length; i++) {
+  const img = images[i];
   const nextStart = i < images.length - 1 ? images[i + 1].startSec : AUDIO_DURATION;
-  const duration  = Math.max(nextStart - img.startSec, 0.1); // at least 0.1s
+  const duration = Math.max(nextStart - img.startSec, 0.1);
+  const fullPath = resolve(IMAGE_DIR, img.name).replace(/\\/g, '/');
+  // Escape single quotes for ffmpeg concat demuxer
+  const escapedPath = fullPath.replace(/'/g, "'\\''");
 
-  return {
-    duration,
-    layers: [
-      {
-        type: 'image',
-        path: resolve(IMAGE_DIR, img.name),
-        resizeMode: 'contain-blur', // letterbox with blurred background fill
-      },
-    ],
-  };
+  concatLines.push(`file '${escapedPath}'`);
+  concatLines.push(`duration ${duration.toFixed(3)}`);
+}
+
+// FFmpeg concat demuxer requires the last file to be repeated without duration
+const lastImgPath = resolve(IMAGE_DIR, images.at(-1).name).replace(/\\/g, '/').replace(/'/g, "'\\''");
+concatLines.push(`file '${lastImgPath}'`);
+
+writeFileSync(CONCAT_FILE, concatLines.join('\n'), 'utf-8');
+
+// ── 3. Render via FFmpeg ──────────────────────────────────────────────────
+const width = isFast ? 640 : 1920;
+const height = isFast ? 360 : 1080;
+const fps = isFast ? 15 : 30;
+const preset = isFast ? 'ultrafast' : 'veryfast';
+
+// Fast downscaled background blur for beautiful cinematic fill with minimal CPU overhead
+const bgW = Math.max(160, Math.round(width / 4));
+const bgH = Math.max(90, Math.round(height / 4));
+const filterComplex = `[0:v]fps=${fps},split=2[bg][fg];[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${width}:${height}:flags=bilinear[bgblur];[fg]scale=${width}:${height}:force_original_aspect_ratio=decrease[fgscaled];[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,format=yuv420p[v]`;
+
+const hasAudio = existsSync(AUDIO_PATH);
+const ffmpegArgs = [
+  '-f', 'concat',
+  '-safe', '0',
+  '-i', CONCAT_FILE,
+  ...(hasAudio ? ['-i', AUDIO_PATH] : []),
+  '-filter_complex', filterComplex,
+  '-map', '[v]',
+  ...(hasAudio ? ['-map', '1:a:0', '-c:a', 'aac', '-b:a', '192k'] : []),
+  '-c:v', 'libx264',
+  '-preset', preset,
+  '-crf', '18',
+  '-movflags', 'faststart',
+  '-shortest',
+  '-y',
+  OUTPUT_PATH,
+  '-progress', 'pipe:1',
+];
+
+console.log('\n🚀 Starting native FFmpeg render...');
+
+await new Promise((resolvePromise, rejectPromise) => {
+  const proc = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+
+  let lastPercent = -1;
+  let stdoutBuf = '';
+
+  proc.stdout.on('data', (chunk) => {
+    stdoutBuf += chunk.toString();
+    const lines = stdoutBuf.split('\n');
+    stdoutBuf = lines.pop();
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('out_time_us=')) {
+        const us = parseInt(trimmed.slice('out_time_us='.length), 10);
+        if (!isNaN(us) && AUDIO_DURATION > 0) {
+          const currentSec = us / 1_000_000;
+          const pct = Math.min(100, Math.max(0, Math.floor((currentSec / AUDIO_DURATION) * 100)));
+          if (pct !== lastPercent) {
+            lastPercent = pct;
+            process.stdout.write(`${pct}% `);
+          }
+        }
+      }
+    }
+  });
+
+  proc.stderr.on('data', (chunk) => {
+    const msg = chunk.toString();
+    if (msg.includes('Error') || msg.includes('fatal')) {
+      console.error(msg);
+    }
+  });
+
+  proc.on('close', (code) => {
+    try {
+      if (existsSync(CONCAT_FILE)) unlinkSync(CONCAT_FILE);
+    } catch {}
+
+    if (code === 0) {
+      process.stdout.write('100%\n');
+      console.log(`\n✅ Done! Video saved to: ${OUTPUT_PATH}`);
+      resolvePromise();
+    } else {
+      rejectPromise(new Error(`FFmpeg exited with code ${code}`));
+    }
+  });
+
+  proc.on('error', (err) => {
+    try {
+      if (existsSync(CONCAT_FILE)) unlinkSync(CONCAT_FILE);
+    } catch {}
+    rejectPromise(err);
+  });
 });
-
-// ── 3. Run editly ──────────────────────────────────────────────────────────
-console.log('\n🚀 Starting editly render...');
-await editly({
-  outPath: OUTPUT_PATH,
-  width:   isFast ? 640 : 1920,
-  height:  isFast ? 360 : 1080,
-  fps:     isFast ? 15 : 30,
-  fast:    isFast,
-
-  audioFilePath:   existsSync(AUDIO_PATH) ? AUDIO_PATH : undefined,
-  loopAudio:       false,
-  keepSourceAudio: false,
-
-  defaults: {
-    transition: null, // Hard cuts — preserves exact timestamp timing
-  },
-
-  clips,
-
-  verbose: false,
-  enableFfmpegLog: false,
-});
-
-console.log(`\n✅ Done! Video saved to: ${OUTPUT_PATH}`);
