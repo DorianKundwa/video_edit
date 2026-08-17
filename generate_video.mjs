@@ -34,6 +34,25 @@ function getAudioDuration(filePath) {
   return 600;
 }
 
+// ── Helper: Detect native image dimensions with ffprobe ─────────────────────
+function getImageDimensions(filePath) {
+  try {
+    const stdout = execSync(
+      `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "${filePath}"`,
+      { encoding: 'utf-8' }
+    ).trim();
+    const parts = stdout.split('x').map(x => parseInt(x, 10));
+    if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      const w = parts[0] % 2 === 0 ? parts[0] : parts[0] + 1;
+      const h = parts[1] % 2 === 0 ? parts[1] : parts[1] + 1;
+      return { width: w, height: h };
+    }
+  } catch (e) {
+    console.warn('ffprobe image dimension check failed, using fallback:', e.message);
+  }
+  return { width: 1920, height: 1080 };
+}
+
 const AUDIO_DURATION = getAudioDuration(AUDIO_PATH);
 
 // ── 1. Collect & sort images by timestamp ──────────────────────────────────
@@ -61,11 +80,24 @@ if (images.length === 0) {
   process.exit(1);
 }
 
+// Detect resolution from source images
+const firstImagePath = resolve(IMAGE_DIR, images[0].name);
+const nativeDimensions = getImageDimensions(firstImagePath);
+
+const width = isFast ? Math.round(nativeDimensions.width / 2) : nativeDimensions.width;
+const height = isFast ? Math.round(nativeDimensions.height / 2) : nativeDimensions.height;
+// Ensure even numbers for H.264 encoder
+const outWidth = width % 2 === 0 ? width : width + 1;
+const outHeight = height % 2 === 0 ? height : height + 1;
+const fps = isFast ? 15 : 30;
+const preset = isFast ? 'ultrafast' : 'veryfast';
+
 const totalMin = Math.floor(AUDIO_DURATION / 60);
 const totalSec = Math.floor(AUDIO_DURATION % 60);
 console.log(`📸 Found ${images.length} timestamped images, spanning ${images[0].startSec}s → ${images.at(-1).startSec}s`);
+console.log(`📐 Image source resolution: ${nativeDimensions.width}x${nativeDimensions.height} → Output: ${outWidth}x${outHeight} @ ${fps}fps`);
 console.log(`🎵 Audio duration: ${AUDIO_DURATION.toFixed(2)}s (${totalMin}m ${totalSec}s)`);
-console.log(`⚡ Mode: ${isFast ? 'FAST PREVIEW (640x360 @ 15fps)' : 'HIGH QUALITY (1920x1080 @ 30fps)'}`);
+console.log(`⚡ Mode: ${isFast ? `FAST PREVIEW (${outWidth}x${outHeight} @ ${fps}fps)` : `NATIVE QUALITY (${outWidth}x${outHeight} @ ${fps}fps)`}`);
 
 // ── 2. Build FFmpeg Concat Script ─────────────────────────────────────────
 const concatLines = ['ffconcat version 1.0'];
@@ -88,16 +120,20 @@ concatLines.push(`file '${lastImgPath}'`);
 
 writeFileSync(CONCAT_FILE, concatLines.join('\n'), 'utf-8');
 
-// ── 3. Render via FFmpeg ──────────────────────────────────────────────────
-const width = isFast ? 640 : 1920;
-const height = isFast ? 360 : 1080;
-const fps = isFast ? 15 : 30;
-const preset = isFast ? 'ultrafast' : 'veryfast';
+// ── 3. Render via FFmpeg with cinematic fade-in/out ────────────────────────
+const fadeDuration = 1.5; // 1.5s cinematic smooth fade
+const fadeOutStart = Math.max(0, AUDIO_DURATION - fadeDuration);
 
-// Fast downscaled background blur for beautiful cinematic fill with minimal CPU overhead
-const bgW = Math.max(160, Math.round(width / 4));
-const bgH = Math.max(90, Math.round(height / 4));
-const filterComplex = `[0:v]fps=${fps},split=2[bg][fg];[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${width}:${height}:flags=bilinear[bgblur];[fg]scale=${width}:${height}:force_original_aspect_ratio=decrease[fgscaled];[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,format=yuv420p[v]`;
+// Fast downscaled background blur + centered foreground + cinematic fade in & out
+const bgW = Math.max(160, Math.round(outWidth / 4));
+const bgH = Math.max(90, Math.round(outHeight / 4));
+
+const videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
+  `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
+  `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];` +
+  `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,fade=t=in:st=0:d=${fadeDuration}:color=black,fade=t=out:st=${fadeOutStart.toFixed(2)}:d=${fadeDuration}:color=black,format=yuv420p[v]`;
+
+const audioFilter = `afade=t=in:st=0:d=${fadeDuration},afade=t=out:st=${fadeOutStart.toFixed(2)}:d=${fadeDuration}`;
 
 const hasAudio = existsSync(AUDIO_PATH);
 const ffmpegArgs = [
@@ -105,9 +141,9 @@ const ffmpegArgs = [
   '-safe', '0',
   '-i', CONCAT_FILE,
   ...(hasAudio ? ['-i', AUDIO_PATH] : []),
-  '-filter_complex', filterComplex,
+  '-filter_complex', videoFilter,
   '-map', '[v]',
-  ...(hasAudio ? ['-map', '1:a:0', '-c:a', 'aac', '-b:a', '192k'] : []),
+  ...(hasAudio ? ['-map', '1:a:0', '-af', audioFilter, '-c:a', 'aac', '-b:a', '192k'] : []),
   '-c:v', 'libx264',
   '-preset', preset,
   '-crf', '18',
@@ -118,7 +154,7 @@ const ffmpegArgs = [
   '-progress', 'pipe:1',
 ];
 
-console.log('\n🚀 Starting native FFmpeg render...');
+console.log('\n🎬 Starting native FFmpeg render with cinematic fade...');
 
 await new Promise((resolvePromise, rejectPromise) => {
   const proc = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
