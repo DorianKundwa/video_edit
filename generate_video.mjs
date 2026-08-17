@@ -99,8 +99,9 @@ console.log(`📐 Image source resolution: ${nativeDimensions.width}x${nativeDim
 console.log(`🎵 Audio duration: ${AUDIO_DURATION.toFixed(2)}s (${totalMin}m ${totalSec}s)`);
 console.log(`⚡ Mode: ${isFast ? `FAST PREVIEW (${outWidth}x${outHeight} @ ${fps}fps)` : `NATIVE QUALITY (${outWidth}x${outHeight} @ ${fps}fps)`}`);
 
-// ── 2. Build FFmpeg Concat Script ─────────────────────────────────────────
+// ── 2. Build FFmpeg Concat Script & Interval Tree ─────────────────────────
 const concatLines = ['ffconcat version 1.0'];
+const intervals = [];
 
 for (let i = 0; i < images.length; i++) {
   const img = images[i];
@@ -112,6 +113,7 @@ for (let i = 0; i < images.length; i++) {
 
   concatLines.push(`file '${escapedPath}'`);
   concatLines.push(`duration ${duration.toFixed(3)}`);
+  intervals.push({ start: img.startSec, end: nextStart, dur: duration });
 }
 
 // FFmpeg concat demuxer requires the last file to be repeated without duration
@@ -120,15 +122,32 @@ concatLines.push(`file '${lastImgPath}'`);
 
 writeFileSync(CONCAT_FILE, concatLines.join('\n'), 'utf-8');
 
-// ── 3. Render via FFmpeg with cinematic fade-in/out ────────────────────────
+// Build logarithmic binary search tree expression for smooth Ken Burns zoom (1.0 -> 1.08x per clip)
+function buildZoomTree(items) {
+  if (items.length === 1) {
+    const { start, dur } = items[0];
+    return `1+0.08*clip((it-${start})/${dur.toFixed(3)},0,1)`;
+  }
+  const mid = Math.floor(items.length / 2);
+  const left = items.slice(0, mid);
+  const right = items.slice(mid);
+  const splitTime = left[left.length - 1].end;
+  return `if(lt(it,${splitTime}),${buildZoomTree(left)},${buildZoomTree(right)})`;
+}
+
+const zoomExpr = buildZoomTree(intervals);
+
+// ── 3. Render via FFmpeg with cinematic zoom & fade-in/out ─────────────────
 const fadeDuration = 1.5; // 1.5s cinematic smooth fade
 const fadeOutStart = Math.max(0, AUDIO_DURATION - fadeDuration);
 
-// Fast downscaled background blur + centered foreground + cinematic fade in & out
+// Background blur + foreground smooth Ken Burns zoom + cinematic fade in & out
 const bgW = Math.max(160, Math.round(outWidth / 4));
 const bgH = Math.max(90, Math.round(outHeight / 4));
 
-const videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
+const videoFilter = `[0:v]fps=${fps},` +
+  `zoompan=z='${zoomExpr}':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${outWidth}x${outHeight}:fps=${fps},` +
+  `split=2[bg][fg];` +
   `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
   `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];` +
   `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,fade=t=in:st=0:d=${fadeDuration}:color=black,fade=t=out:st=${fadeOutStart.toFixed(2)}:d=${fadeDuration}:color=black,format=yuv420p[v]`;
@@ -154,7 +173,7 @@ const ffmpegArgs = [
   '-progress', 'pipe:1',
 ];
 
-console.log('\n🎬 Starting native FFmpeg render with cinematic fade...');
+console.log('\n🎬 Starting native FFmpeg render with Ken Burns zoom & cinematic fade...');
 
 await new Promise((resolvePromise, rejectPromise) => {
   const proc = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
