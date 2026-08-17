@@ -172,6 +172,7 @@ const server = http.createServer((req, res) => {
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
     const resolution = url.searchParams.get('res') || (url.searchParams.get('fast') === 'true' ? '720p' : '1080p');
+    const motion = url.searchParams.get('motion') !== 'false';
 
     const args = ['generate_video.mjs'];
     if (resolution === '720p' || url.searchParams.get('fast') === 'true') {
@@ -180,10 +181,15 @@ const server = http.createServer((req, res) => {
       args.push('--2k');
     }
 
+    if (!motion) {
+      args.push('--static');
+    }
+
     const modeLabel = resolution === '2k' ? '2K QHD (1440p)' : resolution === '720p' ? '720p HD DRAFT' : '1080p FULL HD';
+    const motionLabel = motion ? 'Cinematic Motion (Pans & Zooms)' : 'Static Slides';
     send({
       type: 'start',
-      message: `🚀 Starting video generation in ${modeLabel} mode via Native FFmpeg...`,
+      message: `🚀 Starting video generation in ${modeLabel} mode (${motionLabel}) via Native FFmpeg...`,
     });
 
     activeProc = spawn('node', args, { cwd: __dirname });

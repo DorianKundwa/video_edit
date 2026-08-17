@@ -791,6 +791,12 @@
         </button>
       </div>
 
+      <!-- Cinematic Motion Toggle -->
+      <div class="toggle-wrap active" id="motionToggle" onclick="toggleMotion()" title="Smooth Ken Burns dynamic pans and zoom-ins across each image">
+        <div class="toggle-switch"></div>
+        <span>🎬 Dynamic Pans & Zooms</span>
+      </div>
+
       <!-- Generate button -->
       <button class="generate-btn" id="generateBtn" onclick="startGeneration()">
         <span class="spinner"></span>
@@ -850,6 +856,7 @@
 <script>
   let allImages = [];
   let selectedResolution = '1080p';
+  let isMotionEnabled = true;
   let abortCtrl = null;
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -951,6 +958,11 @@
     });
   }
 
+  function toggleMotion() {
+    isMotionEnabled = !isMotionEnabled;
+    document.getElementById('motionToggle').classList.toggle('active', isMotionEnabled);
+  }
+
   // ── Show video ────────────────────────────────────────────────────────────
   function showVideo(meta) {
     const player = document.getElementById('videoPlayer');
@@ -989,6 +1001,7 @@
 
     const query = new URLSearchParams({
       res: selectedResolution,
+      motion: isMotionEnabled,
     });
 
     fetch(`/api/generate?${query.toString()}`, {

@@ -15,6 +15,7 @@ sea-prep.blob
 # Output video & render temp files
 output.mp4
 concat_list.txt
+filter_complex.txt
 editly-tmp-*/
 
 # OS files

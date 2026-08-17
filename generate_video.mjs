@@ -1,6 +1,7 @@
 // generate_video.mjs
 // Reads images from ./image/, parses [M-SS] timestamps from filenames,
-// computes each clip's duration, then renders directly with native FFmpeg.
+// computes each clip's duration, then renders via native FFmpeg with
+// smooth, cinematic Ken Burns digital pans and zoom-ins.
 
 import { readdirSync, existsSync, writeFileSync, unlinkSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -13,9 +14,11 @@ const IMAGE_DIR   = resolve(__dirname, 'image');
 const AUDIO_PATH  = resolve(__dirname, 'audio/untitled.mp3');
 const OUTPUT_PATH = resolve(__dirname, 'output.mp4');
 const CONCAT_FILE = resolve(__dirname, 'concat_list.txt');
+const FILTER_FILE = resolve(__dirname, 'filter_complex.txt');
 
-const isFast = process.argv.includes('--fast');
-const is2K   = process.argv.includes('--2k');
+const isFast   = process.argv.includes('--fast');
+const is2K     = process.argv.includes('--2k');
+const isStatic = process.argv.includes('--static') || process.argv.includes('--no-motion');
 
 // ── Helper: Get audio duration dynamically with ffprobe ────────────────────
 function getAudioDuration(filePath) {
@@ -83,8 +86,26 @@ console.log(`📸 Found ${images.length} timestamped images, spanning ${images[0
 console.log(`📐 Render Target: ${outWidth}x${outHeight} @ ${fps}fps (${is2K ? '2K QHD' : isFast ? '720p HD Preview' : '1080p Full HD'})`);
 console.log(`🎵 Audio duration: ${AUDIO_DURATION.toFixed(2)}s (${totalMin}m ${totalSec}s)`);
 
-// ── 2. Build FFmpeg Concat Script ─────────────────────────────────────────
+// ── 2. Motion Presets (Ken Burns Digital Pans & Zooms) ─────────────────────
+// Overscale factor: image is scaled 15% larger than canvas, allowing smooth panning
+// and zooming across the frame without revealing borders.
+const OVER   = 1.15;
+const ZOOM   = 0.08; // 8% subtle zoom motion
+const PAN_PX = Math.round(outWidth * 0.05);  // 5% horizontal pan
+const PAN_PY = Math.round(outHeight * 0.05); // 5% vertical pan
+
+const MOTIONS = [
+  { label: 'zoom-in center',          zoomDir:  1, dx:  0,       dy:  0       },
+  { label: 'pan left→right',          zoomDir:  0, dx: -PAN_PX,  dy:  0       },
+  { label: 'zoom-out center',         zoomDir: -1, dx:  0,       dy:  0       },
+  { label: 'pan right→left',          zoomDir:  0, dx:  PAN_PX,  dy:  0       },
+  { label: 'pan top-left→bot-right',  zoomDir:  1, dx: -PAN_PX,  dy: -PAN_PY  },
+  { label: 'pan bot-right→top-left',  zoomDir: -1, dx:  PAN_PX,  dy:  PAN_PY  },
+];
+
+// ── 3. Build FFmpeg Concat Script & Interval Tree ─────────────────────────
 const concatLines = ['ffconcat version 1.0'];
+const clips = [];
 
 for (let i = 0; i < images.length; i++) {
   const img = images[i];
@@ -95,6 +116,9 @@ for (let i = 0; i < images.length; i++) {
 
   concatLines.push(`file '${escapedPath}'`);
   concatLines.push(`duration ${duration.toFixed(3)}`);
+
+  const motion = MOTIONS[i % MOTIONS.length];
+  clips.push({ startSec: img.startSec, duration, motion });
 }
 
 // Last file repeated for concat demuxer requirement
@@ -103,14 +127,66 @@ concatLines.push(`file '${lastImgPath}'`);
 
 writeFileSync(CONCAT_FILE, concatLines.join('\n'), 'utf-8');
 
-// ── 3. Render via FFmpeg with clean background blur and sharp centered images ─
+// ── 4. Build Motion Math & Expressions ─────────────────────────────────────
+const bigW = Math.round(outWidth  * OVER / 2) * 2;
+const bigH = Math.round(outHeight * OVER / 2) * 2;
+const headX = (bigW - outWidth)  / 2;
+const headY = (bigH - outHeight) / 2;
+
+function buildTree(items, getter) {
+  if (items.length === 1) return getter(items[0]);
+  const mid = Math.floor(items.length / 2);
+  const left = items.slice(0, mid);
+  const right = items.slice(mid);
+  const split = left[left.length - 1].startSec + left[left.length - 1].duration;
+  return `if(lt(t,${split.toFixed(3)}),${buildTree(left, getter)},${buildTree(right, getter)})`;
+}
+
+function progressExpr(clip) {
+  return `clip((t-${clip.startSec.toFixed(3)})/${clip.duration.toFixed(3)},0,1)`;
+}
+
+function zoomScaleExpr(clip) {
+  if (isStatic || clip.motion.zoomDir === 0) return '1';
+  const p = progressExpr(clip);
+  if (clip.motion.zoomDir > 0) return `(1+${ZOOM}*${p})`;
+  return `(1+${ZOOM}*(1-${p}))`;
+}
+
+function panExpr(clip, axis) {
+  if (isStatic) return '0';
+  const delta = axis === 'x' ? clip.motion.dx : clip.motion.dy;
+  if (delta === 0) return '0';
+  const p = progressExpr(clip);
+  // Pan from -delta to +delta across the duration
+  return `(-(${delta}) + 2*(${delta})*${p})`;
+}
+
+const scaleExpr = buildTree(clips, (c) => zoomScaleExpr(c));
+const panXExpr  = buildTree(clips, (c) => panExpr(c, 'x'));
+const panYExpr  = buildTree(clips, (c) => panExpr(c, 'y'));
+
+const overlayX = `-(${headX}+(${panXExpr})+((${scaleExpr})-1)*${bigW}/2)`;
+const overlayY = `-(${headY}+(${panYExpr})+((${scaleExpr})-1)*${bigH}/2)`;
+
+// ── 5. Render via FFmpeg with Smooth Digital Pans & Zooms ─────────────────
 const bgW = Math.max(160, Math.round(outWidth / 4));
 const bgH = Math.max(90, Math.round(outHeight / 4));
 
-const videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
-  `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
-  `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];` +
-  `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,format=yuv420p[v]`;
+let videoFilter;
+if (isStatic) {
+  videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
+    `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
+    `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];` +
+    `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,format=yuv420p[v]`;
+} else {
+  videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
+    `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
+    `[fg]scale=${bigW}:${bigH}:force_original_aspect_ratio=increase,crop=${bigW}:${bigH},scale='${bigW}*(${scaleExpr})':'${bigH}*(${scaleExpr})':eval=frame:flags=bicubic[bigzoom];` +
+    `[bgblur][bigzoom]overlay='${overlayX}':'${overlayY}':eval=frame,format=yuv420p[v]`;
+}
+
+writeFileSync(FILTER_FILE, videoFilter, 'utf-8');
 
 const hasAudio = existsSync(AUDIO_PATH);
 const ffmpegArgs = [
@@ -118,7 +194,7 @@ const ffmpegArgs = [
   '-safe', '0',
   '-i', CONCAT_FILE,
   ...(hasAudio ? ['-i', AUDIO_PATH] : []),
-  '-filter_complex', videoFilter,
+  '-filter_complex_script', FILTER_FILE,
   '-map', '[v]',
   ...(hasAudio ? ['-map', '1:a:0', '-c:a', 'aac', '-b:a', '192k'] : []),
   '-c:v', 'libx264',
@@ -131,7 +207,7 @@ const ffmpegArgs = [
   '-progress', 'pipe:1',
 ];
 
-console.log(`\n🎬 Starting native FFmpeg render (${outWidth}x${outHeight} @ ${fps}fps, CRF 17)...`);
+console.log(`\n🎬 Starting native FFmpeg render with smooth digital pans & zooms (${outWidth}x${outHeight} @ ${fps}fps, CRF 17)...`);
 
 await new Promise((resolvePromise, rejectPromise) => {
   const proc = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -170,6 +246,7 @@ await new Promise((resolvePromise, rejectPromise) => {
   proc.on('close', (code) => {
     try {
       if (existsSync(CONCAT_FILE)) unlinkSync(CONCAT_FILE);
+      if (existsSync(FILTER_FILE)) unlinkSync(FILTER_FILE);
     } catch {}
 
     if (code === 0) {
@@ -184,6 +261,7 @@ await new Promise((resolvePromise, rejectPromise) => {
   proc.on('error', (err) => {
     try {
       if (existsSync(CONCAT_FILE)) unlinkSync(CONCAT_FILE);
+      if (existsSync(FILTER_FILE)) unlinkSync(FILTER_FILE);
     } catch {}
     rejectPromise(err);
   });
