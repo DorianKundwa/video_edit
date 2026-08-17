@@ -3,44 +3,102 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const PORT        = 0;         // 0 = OS picks a random free port
-const IMAGE_DIR  = path.join(__dirname, 'image');
-const AUDIO_PATH = path.join(__dirname, 'audio', 'untitled.mp3');
+const PORT        = 0; // 0 = OS picks a random available port
+const IMAGE_DIR   = path.join(__dirname, 'image');
+const AUDIO_PATH  = path.join(__dirname, 'audio', 'untitled.mp3');
 const OUTPUT_PATH = path.join(__dirname, 'output.mp4');
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const PUBLIC_DIR  = path.join(__dirname, 'public');
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function parseTimestamp(filename) {
   const m = filename.match(/^\[(\d+)-(\d+)\]/);
   if (!m) return null;
-  const min = parseInt(m[1]), sec = parseInt(m[2]);
-  return { min, sec, total: min * 60 + sec, label: `${min}:${String(sec).padStart(2,'0')}` };
+  const min = parseInt(m[1], 10);
+  const sec = parseInt(m[2], 10);
+  return { min, sec, total: min * 60 + sec, label: `${min}:${String(sec).padStart(2, '0')}` };
+}
+
+function getAudioInfo(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  const stat = fs.statSync(filePath);
+  let duration = null;
+  let durationFormatted = '—';
+  try {
+    const stdout = execSync(
+      `ffprobe -v quiet -print_format json -show_format "${filePath}"`,
+      { encoding: 'utf-8' }
+    );
+    const info = JSON.parse(stdout);
+    if (info?.format?.duration) {
+      duration = parseFloat(info.format.duration);
+      const m = Math.floor(duration / 60);
+      const s = Math.floor(duration % 60);
+      durationFormatted = `${m}:${String(s).padStart(2, '0')}`;
+    }
+  } catch {}
+  return {
+    name: path.basename(filePath),
+    size: stat.size,
+    duration,
+    durationFormatted,
+  };
 }
 
 function mime(fp) {
   const ext = path.extname(fp).toLowerCase();
-  return { '.html':'text/html','.css':'text/css','.js':'application/javascript',
-           '.json':'application/json','.mp4':'video/mp4',
-           '.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png',
-           '.webp':'image/webp','.ico':'image/x-icon' }[ext] || 'application/octet-stream';
+  return {
+    '.html': 'text/html; charset=utf-8',
+    '.css':  'text/css; charset=utf-8',
+    '.js':   'application/javascript; charset=utf-8',
+    '.json': 'application/json',
+    '.mp4':  'video/mp4',
+    '.mkv':  'video/x-matroska',
+    '.webm': 'video/webm',
+    '.jpg':  'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png':  'image/png',
+    '.webp': 'image/webp',
+    '.svg':  'image/svg+xml',
+    '.mp3':  'audio/mpeg',
+    '.wav':  'audio/wav',
+    '.ico':  'image/x-icon',
+  }[ext] || 'application/octet-stream';
 }
 
 function json(res, data, status = 200) {
-  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(data));
 }
 
 function serveFile(res, filePath) {
   try {
     const stat = fs.statSync(filePath);
-    res.writeHead(200, { 'Content-Type': mime(filePath), 'Content-Length': stat.size });
+    res.writeHead(200, {
+      'Content-Type': mime(filePath),
+      'Content-Length': stat.size,
+      'Cache-Control': 'public, max-age=3600',
+    });
     fs.createReadStream(filePath).pipe(res);
   } catch {
-    res.writeHead(404); res.end('Not found');
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not found');
+  }
+}
+
+function killProcessTree(proc) {
+  if (!proc || !proc.pid) return;
+  if (process.platform === 'win32') {
+    try {
+      execSync(`taskkill /pid ${proc.pid} /T /F 2>nul`);
+    } catch {}
+  } else {
+    try {
+      proc.kill('SIGTERM');
+    } catch {}
   }
 }
 
@@ -51,13 +109,14 @@ let activeProc   = null;
 // ── server ────────────────────────────────────────────────────────────────────
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  const url  = new URL(req.url, `http://${req.headers.host}`);
+  const url   = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const path_ = url.pathname;
 
   // ── GET /api/images ─────────────────────────────────────────────────────────
   if (path_ === '/api/images' && req.method === 'GET') {
     try {
-      const images = fs.readdirSync(IMAGE_DIR)
+      if (!fs.existsSync(IMAGE_DIR)) return json(res, { count: 0, images: [] });
+      const rawImages = fs.readdirSync(IMAGE_DIR)
         .filter(f => /\.(jpe?g|png|webp)$/i.test(f))
         .map(f => {
           const ts = parseTimestamp(f);
@@ -65,6 +124,20 @@ const server = http.createServer((req, res) => {
         })
         .filter(Boolean)
         .sort((a, b) => a.timestamp.total - b.timestamp.total);
+
+      // Compute durations
+      const audioInfo = getAudioInfo(AUDIO_PATH);
+      const totalAudioSec = audioInfo?.duration || (rawImages.at(-1)?.timestamp.total + 5);
+
+      const images = rawImages.map((img, i) => {
+        const nextStart = i < rawImages.length - 1 ? rawImages[i + 1].timestamp.total : totalAudioSec;
+        const durationSec = Math.max(0.1, nextStart - img.timestamp.total);
+        return {
+          ...img,
+          durationSec: parseFloat(durationSec.toFixed(1)),
+        };
+      });
+
       return json(res, { count: images.length, images });
     } catch (e) {
       return json(res, { error: e.message }, 500);
@@ -73,12 +146,11 @@ const server = http.createServer((req, res) => {
 
   // ── GET /api/info ────────────────────────────────────────────────────────────
   if (path_ === '/api/info' && req.method === 'GET') {
-    const audioExists = fs.existsSync(AUDIO_PATH);
+    const audio = getAudioInfo(AUDIO_PATH);
     const outputExists = fs.existsSync(OUTPUT_PATH);
-    const audioStat = audioExists ? fs.statSync(AUDIO_PATH) : null;
     const outputStat = outputExists ? fs.statSync(OUTPUT_PATH) : null;
     return json(res, {
-      audio: audioExists ? { name: path.basename(AUDIO_PATH), size: audioStat.size } : null,
+      audio,
       output: outputExists ? { size: outputStat.size, mtime: outputStat.mtime } : null,
       isGenerating,
     });
@@ -99,9 +171,16 @@ const server = http.createServer((req, res) => {
 
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
-    send({ type: 'start', message: '🚀 Starting video generation...' });
+    const isFast = url.searchParams.get('fast') === 'true';
+    send({
+      type: 'start',
+      message: `🚀 Starting video generation in ${isFast ? 'FAST PREVIEW' : 'HIGH QUALITY (1080p)'} mode...`,
+    });
 
-    activeProc = spawn('node', ['generate_video.mjs'], { cwd: __dirname });
+    const args = ['generate_video.mjs'];
+    if (isFast) args.push('--fast');
+
+    activeProc = spawn('node', args, { cwd: __dirname });
 
     let buffer = '';
     let lastPct = 0;
@@ -109,12 +188,12 @@ const server = http.createServer((req, res) => {
     const handleChunk = (chunk) => {
       buffer += chunk.toString();
       const lines = buffer.split('\n');
-      buffer = lines.pop(); // keep incomplete last line
+      buffer = lines.pop(); // keep partial line
 
       for (const line of lines) {
         if (!line.trim()) continue;
-        // Extract latest % from a line like " 57%  57%  58% ..."
-        const pcts = [...line.matchAll(/(\d+)%/g)].map(m => parseInt(m[1]));
+        // Extract latest % from line
+        const pcts = [...line.matchAll(/(\d+)%/g)].map(m => parseInt(m[1], 10));
         if (pcts.length > 0) {
           const pct = Math.max(...pcts);
           if (pct !== lastPct) {
@@ -129,7 +208,6 @@ const server = http.createServer((req, res) => {
 
     activeProc.stdout.on('data', handleChunk);
     activeProc.stderr.on('data', (d) => {
-      // filter noisy ffmpeg lines
       const msg = d.toString().trim();
       if (msg && !msg.startsWith('frame=') && !msg.startsWith('size=')) {
         send({ type: 'log', message: msg });
@@ -141,43 +219,60 @@ const server = http.createServer((req, res) => {
       activeProc   = null;
       if (code === 0) {
         const stat = fs.existsSync(OUTPUT_PATH) ? fs.statSync(OUTPUT_PATH) : null;
-        send({ type: 'done', message: '✅ Video generated!', outputSize: stat?.size });
+        send({ type: 'done', message: '✅ Video generated successfully!', outputSize: stat?.size });
       } else {
-        send({ type: 'error', message: `❌ Process exited with code ${code}` });
+        send({ type: 'error', message: `❌ Render process exited with code ${code}` });
       }
       res.end();
     });
 
     req.on('close', () => {
-      if (activeProc) { activeProc.kill(); isGenerating = false; activeProc = null; }
+      if (activeProc) {
+        killProcessTree(activeProc);
+        isGenerating = false;
+        activeProc = null;
+      }
     });
     return;
   }
 
   // ── POST /api/cancel ─────────────────────────────────────────────────────────
   if (path_ === '/api/cancel' && req.method === 'POST') {
-    if (activeProc) { activeProc.kill(); isGenerating = false; activeProc = null; }
+    if (activeProc) {
+      killProcessTree(activeProc);
+      isGenerating = false;
+      activeProc = null;
+    }
     return json(res, { ok: true });
   }
 
-  // ── GET /output.mp4 (with range support for seeking) ─────────────────────────
+  // ── GET /output.mp4 (with full HTTP range support for video player) ─────────
   if (path_ === '/output.mp4' && req.method === 'GET') {
-    if (!fs.existsSync(OUTPUT_PATH)) { res.writeHead(404); res.end(); return; }
+    if (!fs.existsSync(OUTPUT_PATH)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Output video not found');
+      return;
+    }
     const stat = fs.statSync(OUTPUT_PATH);
     const range = req.headers.range;
     if (range) {
-      const [startStr, endStr] = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(startStr);
-      const end   = endStr ? parseInt(endStr) : stat.size - 1;
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end   = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+      const chunksize = end - start + 1;
       res.writeHead(206, {
-        'Content-Type':  'video/mp4',
-        'Content-Range': `bytes ${start}-${end}/${stat.size}`,
-        'Content-Length': end - start + 1,
-        'Accept-Ranges': 'bytes',
+        'Content-Range':  `bytes ${start}-${end}/${stat.size}`,
+        'Accept-Ranges':  'bytes',
+        'Content-Length': chunksize,
+        'Content-Type':   'video/mp4',
       });
       fs.createReadStream(OUTPUT_PATH, { start, end }).pipe(res);
     } else {
-      res.writeHead(200, { 'Content-Type': 'video/mp4', 'Content-Length': stat.size, 'Accept-Ranges': 'bytes' });
+      res.writeHead(200, {
+        'Content-Length': stat.size,
+        'Content-Type':   'video/mp4',
+        'Accept-Ranges':  'bytes',
+      });
       fs.createReadStream(OUTPUT_PATH).pipe(res);
     }
     return;
@@ -185,11 +280,14 @@ const server = http.createServer((req, res) => {
 
   // ── Serve image files ─────────────────────────────────────────────────────────
   if (path_.startsWith('/image/')) {
-    return serveFile(res, path.join(__dirname, decodeURIComponent(path_)));
+    const rel = decodeURIComponent(path_.slice('/image/'.length));
+    const fullPath = path.join(IMAGE_DIR, rel);
+    return serveFile(res, fullPath);
   }
 
-  // ── Serve public/ ─────────────────────────────────────────────────────────────
-  const fp = path_ === '/' ? path.join(PUBLIC_DIR, 'index.html') : path.join(PUBLIC_DIR, path_);
+  // ── Serve public files (HTML, CSS, etc.) ──────────────────────────────────────
+  const reqPath = path_ === '/' ? 'index.html' : path_.slice(1);
+  const fp = path.join(PUBLIC_DIR, reqPath);
   serveFile(res, fp);
 });
 

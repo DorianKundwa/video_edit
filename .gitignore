@@ -12,8 +12,9 @@ npm-debug.log*
 VideoEditStudio.exe
 sea-prep.blob
 
-# Output video
+# Output video & render temp files
 output.mp4
+editly-tmp-*/
 
 # OS files
 .DS_Store
