@@ -198,8 +198,12 @@ if (isStatic) {
 // Chain subtitle filter when an SRT file is present
 const outLabel = hasSubs ? 'vout' : 'v';
 if (hasSubs) {
-  // Forward-slash path required by FFmpeg's subtitles filter on all platforms
-  const srtForFFmpeg = SUBTITLE_PATH.replace(/\\/g, '/');
+  // On Windows, FFmpeg's subtitles filter treats ':' as an option separator,
+  // so 'C:/path' is misread as option name 'C' with value '//path'.
+  // Escape the drive-letter colon (e.g. C: → C\:) and use forward slashes.
+  const srtForFFmpeg = SUBTITLE_PATH
+    .replace(/\\/g, '/')          // backslash → forward slash
+    .replace(/^([A-Za-z]):/, '$1\\:'); // escape drive-letter colon for FFmpeg
   const fontSize = is2K ? 36 : isFast ? 22 : 28;
   const subStyle = [
     'FontName=Inter',
@@ -212,7 +216,7 @@ if (hasSubs) {
     'Alignment=2',                // centered bottom
     'MarginV=30',
   ].join(',');
-  videoFilter += `;[v]subtitles='${srtForFFmpeg}':force_style='${subStyle}'[vout]`;
+  videoFilter += `;[v]subtitles='${srtForFFmpeg}':original_size=${outWidth}x${outHeight}:force_style='${subStyle}'[vout]`;
 }
 
 writeFileSync(FILTER_FILE, videoFilter, 'utf-8');
