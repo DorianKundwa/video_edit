@@ -1,0 +1,14 @@
+{
+  "fontName": "Impact",
+  "fontSize": 54,
+  "bold": true,
+  "italic": false,
+  "uppercase": true,
+  "primaryColor": "#FFD700",
+  "outlineColor": "#000000",
+  "outlineWidth": 4,
+  "borderStyle": 1,
+  "alignment": 2,
+  "marginV": 50,
+  "fadeInMs": 200
+}

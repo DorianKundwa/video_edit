@@ -7,15 +7,31 @@ import { spawn, execSync } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const PORT         = 0; // 0 = OS picks a random available port
+const PORT         = process.env.PORT ? parseInt(process.env.PORT, 10) : 0;
+const AUDIO_DIR    = path.join(__dirname, 'audio');
 const IMAGE_DIR    = path.join(__dirname, 'image');
 const AUDIO_PATH   = path.join(__dirname, 'audio', 'untitled.mp3');
 const OUTPUT_PATH  = path.join(__dirname, 'output.mp4');
 const PUBLIC_DIR   = path.join(__dirname, 'public');
 const SUBTITLE_DIR = path.join(__dirname, 'subtitles');
 const SUBTITLE_PATH = path.join(SUBTITLE_DIR, 'subtitles.srt');
+const SUBTITLE_SETTINGS_PATH = path.join(SUBTITLE_DIR, 'settings.json');
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+function parseSrtCues(content) {
+  const entries = [];
+  const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (const block of normalized.split(/\n\n+/)) {
+    const lines = block.trim().split('\n');
+    const ti = lines.findIndex(l => l.includes('-->'));
+    if (ti === -1) continue;
+    const [startStr, endStr] = lines[ti].split('-->').map(s => s.trim());
+    const text = lines.slice(ti + 1).join('\n').trim();
+    if (!text) continue;
+    entries.push({ id: entries.length + 1, start: startStr, end: endStr, text });
+  }
+  return entries;
+}
 function parseTimestamp(filename) {
   const m = filename.match(/^\[(\d+)-(\d+)\]/);
   if (!m) return null;
@@ -153,12 +169,101 @@ const server = http.createServer((req, res) => {
     const outputStat = outputExists ? fs.statSync(OUTPUT_PATH) : null;
     const subtitleExists = fs.existsSync(SUBTITLE_PATH);
     const subtitleStat = subtitleExists ? fs.statSync(SUBTITLE_PATH) : null;
+    let subtitleEntries = null;
+    if (subtitleExists) {
+      try {
+        subtitleEntries = fs.readFileSync(SUBTITLE_PATH, 'utf-8').split('\n').filter(l => l.includes('-->')).length;
+      } catch {}
+    }
     return json(res, {
       audio,
       output: outputExists ? { size: outputStat.size, mtime: outputStat.mtime } : null,
-      subtitle: subtitleExists ? { name: 'subtitles.srt', size: subtitleStat.size } : null,
+      subtitle: subtitleExists ? { name: 'subtitles.srt', size: subtitleStat.size, entries: subtitleEntries } : null,
       isGenerating,
     });
+  }
+
+  // ── GET /api/subtitles ───────────────────────────────────────────────────────
+  if (path_ === '/api/subtitles' && req.method === 'GET') {
+    if (!fs.existsSync(SUBTITLE_PATH)) {
+      return json(res, { exists: false, content: '', entries: [], size: 0 });
+    }
+    try {
+      const content = fs.readFileSync(SUBTITLE_PATH, 'utf-8');
+      const entries = parseSrtCues(content);
+      const stat = fs.statSync(SUBTITLE_PATH);
+      return json(res, { exists: true, content, entries, size: stat.size });
+    } catch (e) {
+      return json(res, { error: e.message }, 500);
+    }
+  }
+
+  // ── PUT /api/subtitles ───────────────────────────────────────────────────────
+  if (path_ === '/api/subtitles' && req.method === 'PUT') {
+    let body = '';
+    req.on('data', c => body += c.toString());
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}');
+        const content = parsed.content;
+        if (typeof content !== 'string') return json(res, { error: 'Invalid content' }, 400);
+        if (!fs.existsSync(SUBTITLE_DIR)) fs.mkdirSync(SUBTITLE_DIR, { recursive: true });
+        fs.writeFileSync(SUBTITLE_PATH, content, 'utf-8');
+        const entries = parseSrtCues(content);
+        const stat = fs.statSync(SUBTITLE_PATH);
+        return json(res, { ok: true, size: stat.size, entries: entries.length });
+      } catch (e) {
+        return json(res, { error: e.message }, 500);
+      }
+    });
+    return;
+  }
+
+  // ── GET /api/subtitle-settings ─────────────────────────────────────────────
+  if (path_ === '/api/subtitle-settings' && req.method === 'GET') {
+    const defaultSettings = {
+      fontName: 'Inter',
+      fontSize: 42,
+      bold: false,
+      italic: false,
+      uppercase: false,
+      primaryColor: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 2.5,
+      shadowDepth: 1.0,
+      backColor: '#000000',
+      backAlpha: '99',
+      borderStyle: 1,
+      alignment: 2,
+      marginV: 40,
+      fadeInMs: 200,
+    };
+    if (!fs.existsSync(SUBTITLE_SETTINGS_PATH)) {
+      return json(res, defaultSettings);
+    }
+    try {
+      const data = JSON.parse(fs.readFileSync(SUBTITLE_SETTINGS_PATH, 'utf-8'));
+      return json(res, { ...defaultSettings, ...data });
+    } catch (e) {
+      return json(res, defaultSettings);
+    }
+  }
+
+  // ── POST /api/subtitle-settings ────────────────────────────────────────────
+  if ((path_ === '/api/subtitle-settings') && (req.method === 'POST' || req.method === 'PUT')) {
+    let body = '';
+    req.on('data', c => body += c.toString());
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}');
+        if (!fs.existsSync(SUBTITLE_DIR)) fs.mkdirSync(SUBTITLE_DIR, { recursive: true });
+        fs.writeFileSync(SUBTITLE_SETTINGS_PATH, JSON.stringify(parsed, null, 2), 'utf-8');
+        return json(res, { ok: true, settings: parsed });
+      } catch (e) {
+        return json(res, { error: e.message }, 500);
+      }
+    });
+    return;
   }
 
   // ── POST /api/generate ────────────────────────────────────────────────────────
@@ -177,6 +282,7 @@ const server = http.createServer((req, res) => {
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
     const resolution = url.searchParams.get('res') || (url.searchParams.get('fast') === 'true' ? '720p' : '1080p');
+    const motionParam = url.searchParams.get('motion');
     const effectsParam = url.searchParams.get('effects') || '';
 
     const args = ['generate_video.mjs'];
@@ -185,16 +291,20 @@ const server = http.createServer((req, res) => {
     } else if (resolution === '2k') {
       args.push('--2k');
     }
-    if (effectsParam) {
+
+    const isStaticMode = motionParam === 'static' || motionParam === 'false' || url.searchParams.get('static') === 'true';
+    if (isStaticMode) {
+      args.push('--static');
+    } else if (effectsParam) {
       args.push(`--effects=${effectsParam}`);
     }
 
     const modeLabel = resolution === '2k' ? '2K QHD (1440p)' : resolution === '720p' ? '720p HD DRAFT' : '1080p FULL HD';
     const effectCount = effectsParam ? effectsParam.split(',').length : 10;
-    const effectsLabel = effectsParam ? `${effectCount} effect${effectCount !== 1 ? 's' : ''}` : 'all 10 effects';
+    const motionLabel = isStaticMode ? 'Static Slides (No Motion)' : (effectsParam ? `${effectCount} effect${effectCount !== 1 ? 's' : ''}` : 'all 10 Ken Burns effects');
     send({
       type: 'start',
-      message: `🚀 Starting video generation in ${modeLabel} mode (${effectsLabel}) via Native FFmpeg...`,
+      message: `🚀 Starting video generation in ${modeLabel} mode (${motionLabel}) via Native FFmpeg...`,
     });
 
     activeProc = spawn('node', args, { cwd: __dirname });
@@ -294,8 +404,8 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── DELETE /api/srt ──────────────────────────────────────────────────────────
-  if (path_ === '/api/srt' && req.method === 'DELETE') {
+  // ── DELETE /api/srt & /api/subtitles ─────────────────────────────────────────
+  if ((path_ === '/api/srt' || path_ === '/api/subtitles') && req.method === 'DELETE') {
     try {
       if (fs.existsSync(SUBTITLE_PATH)) fs.unlinkSync(SUBTITLE_PATH);
       return json(res, { ok: true });
@@ -317,7 +427,7 @@ const server = http.createServer((req, res) => {
     });
 
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
-    send({ type: 'start', message: '🎤️ Whisper transcription started (model: base)...' });
+    send({ type: 'start', message: '🎤 Whisper transcription started (model: base)...' });
 
     activeProc = spawn('node', ['transcribe.mjs'], { cwd: __dirname });
 
@@ -343,9 +453,9 @@ const server = http.createServer((req, res) => {
         const entries   = srtExists
           ? fs.readFileSync(SUBTITLE_PATH, 'utf-8').split('\n').filter(l => l.includes('-->')).length
           : 0;
-        send({ type: 'done', message: '\u2705 Transcription complete!', entries, size: srtStat?.size });
+        send({ type: 'done', message: '✅ Transcription complete!', entries, size: srtStat?.size });
       } else {
-        send({ type: 'error', message: `\u274c Whisper failed with exit code ${code}` });
+        send({ type: 'error', message: `❌ Whisper failed with exit code ${code}` });
       }
       res.end();
     });
@@ -402,6 +512,20 @@ const server = http.createServer((req, res) => {
   if (path_.startsWith('/image/')) {
     const rel = decodeURIComponent(path_.slice('/image/'.length));
     const fullPath = path.join(IMAGE_DIR, rel);
+    return serveFile(res, fullPath);
+  }
+
+  // ── Serve audio files ────────────────────────────────────────────────────────
+  if (path_.startsWith('/audio/')) {
+    const rel = decodeURIComponent(path_.slice('/audio/'.length));
+    const fullPath = path.join(AUDIO_DIR, rel);
+    return serveFile(res, fullPath);
+  }
+
+  // ── Serve subtitle files ─────────────────────────────────────────────────────
+  if (path_.startsWith('/subtitles/')) {
+    const rel = decodeURIComponent(path_.slice('/subtitles/'.length));
+    const fullPath = path.join(SUBTITLE_DIR, rel);
     return serveFile(res, fullPath);
   }
 

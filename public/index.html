@@ -3,69 +3,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Video Edit Studio</title>
+  <title>Video Edit Studio — Professional Video Pipeline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Montserrat:wght@400;600;700;800;900&family=Roboto:wght@400;500;700;900&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
+    /* ── Reset & CSS Variables ─────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:         #07070e;
-      --bg1:        #0e0e1a;
-      --bg2:        #141422;
-      --bg3:        #1d1d2f;
-      --bg4:        #26263d;
-      --border:     rgba(255, 255, 255, 0.08);
-      --border-hi:  rgba(255, 255, 255, 0.16);
-      --text:       #eaeaf2;
-      --text-dim:   #8888aa;
-      --text-muted: #555570;
-      --amber:      #f59e0b;
-      --amber-light:#fbbf24;
-      --amber-dim:  #b45309;
-      --amber-glow: rgba(245, 158, 11, 0.18);
-      --green:      #10b981;
-      --green-glow: rgba(16, 185, 129, 0.18);
-      --red:        #ef4444;
-      --red-glow:   rgba(239, 68, 68, 0.18);
-      --blue:       #3b82f6;
-      --radius-sm:  6px;
-      --radius:     10px;
-      --radius-lg:  16px;
-      --shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.3);
-      --shadow-lg:  0 8px 32px rgba(0, 0, 0, 0.5);
+      --bg:           #070810;
+      --bg1:          #0c0d18;
+      --bg2:          #121422;
+      --bg3:          #1a1c30;
+      --bg4:          #242642;
+      --border:       rgba(255, 255, 255, 0.08);
+      --border-hi:    rgba(255, 255, 255, 0.16);
+      --border-focus: rgba(245, 158, 11, 0.5);
+      
+      --text:         #f1f2f8;
+      --text-dim:     #9da1c2;
+      --text-muted:   #5c6082;
+      
+      --amber:        #f59e0b;
+      --amber-light:  #fbbf24;
+      --amber-dim:    #b45309;
+      --amber-glow:   rgba(245, 158, 11, 0.22);
+      
+      --green:        #10b981;
+      --green-light:  #34d399;
+      --green-glow:   rgba(16, 185, 129, 0.22);
+      
+      --cyan:         #0ea5e9;
+      --cyan-light:   #38bdf8;
+      --cyan-glow:    rgba(14, 165, 233, 0.22);
+      
+      --purple:       #8b5cf6;
+      --purple-light: #a78bfa;
+      --purple-glow:  rgba(139, 92, 246, 0.22);
+      
+      --red:          #ef4444;
+      --red-light:    #f87171;
+      --red-glow:     rgba(239, 68, 68, 0.22);
+      
+      --radius-xs:    4px;
+      --radius-sm:    6px;
+      --radius-md:    10px;
+      --radius-lg:    16px;
+      --radius-xl:    22px;
+      
+      --shadow-sm:    0 2px 10px rgba(0, 0, 0, 0.4);
+      --shadow-md:    0 8px 24px rgba(0, 0, 0, 0.5);
+      --shadow-lg:    0 16px 48px rgba(0, 0, 0, 0.65);
+      --shadow-glow:  0 0 20px var(--amber-glow);
     }
 
     html, body {
       height: 100%;
+      width: 100%;
       background: var(--bg);
       color: var(--text);
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      font-size: 14px;
+      font-size: 13.5px;
       line-height: 1.5;
       overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Layout ─────────────────────────────────────────── */
+    /* ── App Grid Structure ────────────────────────────────────────────── */
     .app {
       display: grid;
       grid-template-rows: 58px 1fr;
-      grid-template-columns: 340px 1fr;
+      grid-template-columns: 360px 1fr;
       height: 100vh;
       width: 100vw;
+      overflow: hidden;
     }
 
-    /* ── Header ─────────────────────────────────────────── */
+    /* ── Top Header ────────────────────────────────────────────────────── */
     header {
       grid-column: 1 / -1;
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 0 24px;
+      padding: 0 20px;
       background: var(--bg1);
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(12px);
-      z-index: 10;
+      backdrop-filter: blur(16px);
+      z-index: 20;
     }
 
     .logo {
@@ -84,12 +109,12 @@
       display: grid;
       place-items: center;
       font-size: 17px;
-      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+      box-shadow: 0 2px 12px rgba(245, 158, 11, 0.4);
     }
 
     .logo-text {
       font-size: 16px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: -0.4px;
     }
 
@@ -99,12 +124,26 @@
       -webkit-text-fill-color: transparent;
     }
 
+    .engine-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green-light);
+      white-space: nowrap;
+    }
+
     .header-sep { flex: 1; }
 
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .icon-btn {
@@ -112,13 +151,16 @@
       border: 1px solid var(--border);
       color: var(--text-dim);
       border-radius: var(--radius-sm);
-      width: 32px;
       height: 32px;
-      display: grid;
-      place-items: center;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       cursor: pointer;
-      font-size: 14px;
-      transition: all 0.2s;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .icon-btn:hover {
       background: var(--bg4);
@@ -129,13 +171,13 @@
     .header-badge {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
       padding: 5px 12px;
       background: var(--bg3);
       border: 1px solid var(--border);
       border-radius: 20px;
       font-size: 12px;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--text-dim);
     }
 
@@ -146,16 +188,16 @@
       background: var(--text-muted);
       transition: background 0.3s, box-shadow 0.3s;
     }
-    .status-dot.ready  { background: var(--green); box-shadow: 0 0 8px var(--green); }
-    .status-dot.busy   { background: var(--amber); box-shadow: 0 0 8px var(--amber); animation: pulse 1.2s infinite; }
-    .status-dot.error  { background: var(--red); box-shadow: 0 0 8px var(--red); }
+    .status-dot.ready { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .status-dot.busy  { background: var(--amber); box-shadow: 0 0 10px var(--amber); animation: pulse 1.2s infinite; }
+    .status-dot.error { background: var(--red); box-shadow: 0 0 8px var(--red); }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.4; transform: scale(0.85); }
     }
 
-    /* ── Sidebar ─────────────────────────────────────────── */
+    /* ── Left Sidebar (Timeline Clips) ─────────────────────────────────── */
     .sidebar {
       background: var(--bg1);
       border-right: 1px solid var(--border);
@@ -165,12 +207,13 @@
     }
 
     .sidebar-header {
-      padding: 16px 18px 10px;
+      padding: 14px 16px 12px;
       border-bottom: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       gap: 10px;
       flex-shrink: 0;
+      background: var(--bg1);
     }
 
     .sidebar-title-row {
@@ -180,26 +223,35 @@
     }
 
     .sidebar-title {
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
       color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .count-badge {
-      background: var(--amber-glow);
-      border: 1px solid rgba(245, 158, 11, 0.3);
+    .stats-pill {
+      background: var(--bg3);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 2px 9px;
+      padding: 2px 8px;
       font-size: 11px;
-      font-weight: 600;
-      color: var(--amber-light);
       font-family: 'JetBrains Mono', monospace;
+      color: var(--amber-light);
+      font-weight: 600;
+    }
+
+    .sidebar-search-row {
+      display: flex;
+      gap: 6px;
     }
 
     .search-wrap {
       position: relative;
+      flex: 1;
       display: flex;
       align-items: center;
     }
@@ -209,26 +261,50 @@
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 6px 10px 6px 28px;
+      padding: 6px 26px 6px 28px;
       color: var(--text);
       font-size: 12px;
       font-family: inherit;
       outline: none;
-      transition: border-color 0.2s;
+      transition: all 0.2s;
     }
-    .search-input:focus { border-color: var(--amber); }
+    .search-input:focus {
+      border-color: var(--amber);
+      background: var(--bg3);
+      box-shadow: 0 0 0 2px var(--amber-glow);
+    }
+
     .search-icon {
       position: absolute;
-      left: 9px;
+      left: 8px;
       font-size: 12px;
       color: var(--text-muted);
       pointer-events: none;
     }
 
+    .search-clear {
+      position: absolute;
+      right: 6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg4);
+      color: var(--text-dim);
+      border: none;
+      font-size: 10px;
+      display: none;
+      place-items: center;
+      cursor: pointer;
+    }
+    .search-input:not(:placeholder-shown) + .search-clear { display: grid; }
+
     .image-list {
       flex: 1;
       overflow-y: auto;
-      padding: 6px 0;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .image-list::-webkit-scrollbar { width: 5px; }
@@ -240,27 +316,48 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 8px 16px;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      border: 1px solid transparent;
       cursor: pointer;
-      transition: background 0.15s;
-      border-left: 2px solid transparent;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      position: relative;
     }
 
     .image-item:hover {
       background: var(--bg2);
-      border-left-color: var(--border-hi);
+      border-color: var(--border);
+    }
+
+    .image-item.active {
+      background: rgba(245, 158, 11, 0.09);
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .image-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      background: var(--amber);
+      border-radius: 0 3px 3px 0;
+      box-shadow: 0 0 8px var(--amber);
     }
 
     .img-thumb {
-      width: 48px;
-      height: 32px;
-      border-radius: 5px;
+      width: 52px;
+      height: 36px;
+      border-radius: var(--radius-xs);
       background: var(--bg3);
       border: 1px solid var(--border);
       overflow: hidden;
       flex-shrink: 0;
       display: grid;
       place-items: center;
+      position: relative;
     }
 
     .img-thumb img {
@@ -268,7 +365,9 @@
       height: 100%;
       object-fit: cover;
       display: block;
+      transition: transform 0.2s;
     }
+    .image-item:hover .img-thumb img { transform: scale(1.08); }
 
     .img-meta {
       flex: 1;
@@ -290,98 +389,291 @@
       color: var(--amber-light);
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
-      font-weight: 600;
-      padding: 1px 5px;
+      font-weight: 700;
+      padding: 1px 6px;
       border-radius: 4px;
-      text-align: center;
     }
 
     .dur-badge {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 10.5px;
+      color: var(--text-dim);
+    }
+
+    .effect-badge {
+      font-size: 9.5px;
+      font-weight: 600;
+      background: var(--bg3);
+      border: 1px solid var(--border);
       color: var(--text-muted);
+      padding: 0 5px;
+      border-radius: 3px;
+      margin-left: auto;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
 
     .img-name {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--text-dim);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .image-item:hover .img-name { color: var(--text); }
 
-    /* ── Main ────────────────────────────────────────────── */
-    .main {
+    .img-preview-btn {
+      opacity: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-xs);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
       display: grid;
-      grid-template-rows: auto 1fr;
+      place-items: center;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .image-item:hover .img-preview-btn { opacity: 1; }
+    .img-preview-btn:hover { background: var(--amber); color: #000; border-color: var(--amber-light); }
+
+    /* ── Right Main Area ───────────────────────────────────────────────── */
+    .main {
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
+      height: 100%;
+      background: var(--bg);
     }
 
-    .main-top {
-      padding: 16px 24px;
+    /* ── Studio Top Toolbar ────────────────────────────────────────────── */
+    .studio-toolbar {
+      padding: 12px 20px;
       display: flex;
-      gap: 16px;
       flex-wrap: wrap;
+      gap: 12px;
       align-items: center;
       border-bottom: 1px solid var(--border);
       background: var(--bg1);
       flex-shrink: 0;
+      z-index: 10;
     }
 
-    /* Audio card */
+    /* Audio Card & Integrated Mini Player */
     .audio-card {
       background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      padding: 8px 14px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      min-width: 240px;
+      max-width: 320px;
       flex: 1;
-      min-width: 220px;
+      position: relative;
     }
 
-    .audio-icon {
-      width: 36px;
-      height: 36px;
+    .audio-icon-btn {
+      width: 32px;
+      height: 32px;
       background: linear-gradient(135deg, #8b5cf6, #6366f1);
       border-radius: 8px;
+      border: none;
       display: grid;
       place-items: center;
-      font-size: 16px;
+      font-size: 13px;
+      color: #fff;
+      cursor: pointer;
       flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+      transition: all 0.2s;
+    }
+    .audio-icon-btn:hover { transform: scale(1.06); }
+
+    .audio-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
-    .audio-info { flex: 1; min-width: 0; }
     .audio-name {
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      color: var(--text);
     }
 
     .audio-meta {
       font-size: 11px;
       color: var(--text-dim);
       font-family: 'JetBrains Mono', monospace;
-      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    /* Resolution Selector */
-    .res-group {
+    .audio-scrubber {
+      width: 100%;
+      height: 3px;
+      background: var(--bg3);
+      border-radius: 2px;
+      position: relative;
+      cursor: pointer;
+      margin-top: 2px;
+    }
+    .audio-progress {
+      height: 100%;
+      background: var(--purple-light);
+      border-radius: 2px;
+      width: 0%;
+    }
+
+    /* Subtitle Card & Upload / Transcribe Controls */
+    .srt-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 250px;
+      flex: 1;
+      position: relative;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .srt-card:hover { background: var(--bg3); border-color: var(--border-hi); }
+    .srt-card.drag-over {
+      border-color: var(--amber);
+      background: var(--amber-glow);
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+    }
+    .srt-card.has-file { border-color: rgba(16, 185, 129, 0.4); }
+
+    .srt-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.35);
+      transition: background 0.2s;
+    }
+    .srt-card.has-file .srt-icon {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+    }
+
+    .srt-info { flex: 1; min-width: 0; }
+    .srt-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .srt-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .srt-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .transcribe-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      background: rgba(14, 165, 233, 0.1);
+      color: #38bdf8;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .transcribe-btn:hover:not(:disabled) {
+      background: rgba(14, 165, 233, 0.25);
+      border-color: #38bdf8;
+    }
+    .transcribe-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .transcribe-btn.running {
+      color: var(--amber-light);
+      border-color: rgba(245, 158, 11, 0.5);
+      background: var(--amber-glow);
+      animation: pulse 1.2s infinite;
+    }
+
+    .srt-edit-btn {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 9px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .srt-edit-btn:hover { background: var(--bg4); color: var(--text); border-color: var(--border-hi); }
+    .srt-card.has-file .srt-edit-btn { display: flex; }
+
+    .srt-clear {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--red);
+      font-size: 11px;
+      cursor: pointer;
+      display: none;
+      place-items: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .srt-clear:hover { background: rgba(239, 68, 68, 0.35); }
+    .srt-card.has-file .srt-clear { display: grid; }
+    #srtFileInput { display: none; }
+
+    /* Motion Mode Toggle (Ken Burns vs Static) */
+    .motion-toggle-wrap {
       display: flex;
       align-items: center;
       background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 4px;
-      gap: 3px;
+      border-radius: var(--radius-md);
+      padding: 3px;
+      gap: 2px;
     }
 
-    .res-btn {
-      padding: 6px 12px;
+    .motion-mode-btn {
+      padding: 6px 11px;
       font-size: 12px;
       font-weight: 600;
       font-family: inherit;
@@ -396,114 +688,149 @@
       gap: 5px;
       white-space: nowrap;
     }
-
-    .res-btn:hover:not(.active) {
-      color: var(--text);
-      background: var(--bg3);
-    }
-
-    .res-btn.active {
+    .motion-mode-btn:hover:not(.active) { color: var(--text); background: var(--bg3); }
+    .motion-mode-btn.active {
       background: linear-gradient(135deg, var(--amber-light), var(--amber));
       color: #000;
-      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
     }
 
-    .engine-badge {
+    /* Resolution Selector */
+    .res-group {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--green);
-      white-space: nowrap;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      gap: 2px;
     }
 
-    /* Motion / Ken Burns toggle */
-    .toggle-wrap {
+    .res-btn {
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--text-dim);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .res-btn:hover:not(.active) { color: var(--text); background: var(--bg3); }
+    .res-btn.active {
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      color: #000;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.35);
+    }
+
+    /* Effect Selection Chips & Quick Presets */
+    .effects-section {
       display: flex;
       align-items: center;
       gap: 8px;
       background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 8px 14px;
-      font-size: 12px;
-      font-weight: 500;
+      border-radius: var(--radius-md);
+      padding: 6px 12px;
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .effects-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .effects-chips {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      flex: 1;
+      scrollbar-width: none;
+      padding: 2px 0;
+    }
+    .effects-chips::-webkit-scrollbar { display: none; }
+
+    .effect-chip {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 9px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: var(--bg3);
       color: var(--text-dim);
       cursor: pointer;
-      user-select: none;
+      transition: all 0.15s;
       white-space: nowrap;
+      flex-shrink: 0;
+      user-select: none;
     }
-
-    .toggle-switch {
-      position: relative;
-      width: 34px;
-      height: 18px;
-      background: var(--bg3);
-      border-radius: 20px;
-      border: 1px solid var(--border-hi);
-      transition: background 0.2s;
-    }
-
-    .toggle-switch::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #fff;
-      transition: transform 0.2s;
-    }
-
-    .toggle-wrap.active .toggle-switch {
-      background: var(--amber);
-      border-color: var(--amber-light);
-    }
-
-    .toggle-wrap.active .toggle-switch::after {
-      transform: translateX(16px);
-      background: #000;
-    }
-
-    .toggle-wrap.active {
+    .effect-chip:hover:not(.active) { border-color: var(--border-hi); color: var(--text); }
+    .effect-chip.active {
+      background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.06));
+      border-color: rgba(245, 158, 11, 0.55);
       color: var(--amber-light);
     }
 
-    /* Generate button */
+    .effects-quick-btn {
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .effects-quick-btn:hover { color: var(--amber-light); border-color: var(--amber); }
+
+    /* Render Trigger Buttons */
     .generate-btn {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 0 24px;
-      height: 44px;
+      padding: 0 22px;
+      height: 42px;
       background: linear-gradient(135deg, var(--amber-light), var(--amber-dim));
       color: #000;
       font-family: inherit;
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 13.5px;
+      font-weight: 800;
       border: none;
-      border-radius: var(--radius);
+      border-radius: var(--radius-md);
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       white-space: nowrap;
       flex-shrink: 0;
       box-shadow: 0 4px 18px rgba(245, 158, 11, 0.35);
     }
-
     .generate-btn:hover:not(:disabled) {
       opacity: 0.92;
       transform: translateY(-1px);
       box-shadow: 0 6px 24px rgba(245, 158, 11, 0.45);
     }
-
     .generate-btn:active:not(:disabled) { transform: translateY(0); }
-
     .generate-btn:disabled {
       opacity: 0.45;
       cursor: not-allowed;
@@ -528,39 +855,38 @@
     .cancel-btn {
       display: none;
       align-items: center;
-      gap: 8px;
-      padding: 0 18px;
-      height: 44px;
+      gap: 6px;
+      padding: 0 16px;
+      height: 42px;
       background: var(--bg2);
       border: 1px solid rgba(239, 68, 68, 0.4);
-      color: var(--red);
+      color: var(--red-light);
       font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      border-radius: var(--radius);
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: var(--radius-md);
       cursor: pointer;
       transition: all 0.2s;
       flex-shrink: 0;
     }
-
     .cancel-btn:hover {
       background: rgba(239, 68, 68, 0.15);
       border-color: var(--red);
     }
     .cancel-btn.visible { display: flex; }
 
-    /* ── Main content: 2-column layout ───────────────────── */
-    .main-body {
+    /* ── Main Workspace Body (2 Columns) ───────────────────────────────── */
+    .studio-workspace {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr;
-      gap: 20px;
-      padding: 20px 24px;
+      gap: 16px;
+      padding: 16px 20px;
+      flex: 1;
+      min-height: 0;
       overflow: hidden;
-      height: calc(100vh - 58px - 77px);
     }
 
-    /* Left col: Progress & Logs */
+    /* Left Panel: Render Progress & Console */
     .panel {
       background: var(--bg2);
       border: 1px solid var(--border);
@@ -569,21 +895,23 @@
       display: flex;
       flex-direction: column;
       box-shadow: var(--shadow-sm);
+      min-height: 0;
     }
 
     .panel-header {
-      padding: 14px 18px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
+      background: var(--bg1);
     }
 
     .panel-title {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
       color: var(--text-dim);
       display: flex;
@@ -599,11 +927,12 @@
     }
 
     .progress-bar-wrap {
-      margin: 14px 18px 0;
+      margin: 12px 16px 0;
       height: 6px;
       background: var(--bg3);
       border-radius: 6px;
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     .progress-bar-fill {
@@ -615,14 +944,46 @@
       box-shadow: 0 0 10px var(--amber-glow);
     }
 
+    .console-toolbar {
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .console-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .console-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: var(--radius-xs);
+      padding: 2px 7px;
+      font-size: 10.5px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .console-btn:hover { background: var(--bg3); color: var(--text); border-color: var(--border-hi); }
+
     .log-output {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11.5px;
       color: var(--text-dim);
-      padding: 14px 18px;
+      padding: 12px 16px;
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      line-height: 1.7;
+      line-height: 1.65;
+      background: var(--bg);
     }
 
     .log-output::-webkit-scrollbar { width: 5px; }
@@ -631,8 +992,8 @@
     .log-line { white-space: pre-wrap; word-break: break-all; margin-bottom: 2px; }
     .log-line.info  { color: var(--text-dim); }
     .log-line.start { color: var(--amber-light); font-weight: 600; }
-    .log-line.done  { color: var(--green); font-weight: 600; }
-    .log-line.error { color: var(--red); font-weight: 600; }
+    .log-line.done  { color: var(--green-light); font-weight: 600; }
+    .log-line.error { color: var(--red-light); font-weight: 600; }
 
     .log-placeholder {
       color: var(--text-muted);
@@ -641,7 +1002,7 @@
       margin-top: 40px;
     }
 
-    /* Right col: Video Player */
+    /* Right Panel: Output Video Studio */
     .video-panel {
       background: var(--bg2);
       border: 1px solid var(--border);
@@ -650,6 +1011,7 @@
       display: flex;
       flex-direction: column;
       box-shadow: var(--shadow-sm);
+      min-height: 0;
     }
 
     .video-wrap {
@@ -660,6 +1022,7 @@
       justify-content: center;
       position: relative;
       min-height: 0;
+      overflow: hidden;
     }
 
     .video-empty {
@@ -671,10 +1034,9 @@
       padding: 40px;
       text-align: center;
     }
-
-    .video-empty-icon { font-size: 48px; opacity: 0.4; }
-    .video-empty-text { font-size: 14px; font-weight: 500; }
-    .video-empty-sub  { font-size: 12px; color: var(--text-muted); }
+    .video-empty-icon { font-size: 52px; opacity: 0.35; }
+    .video-empty-text { font-size: 14px; font-weight: 600; color: var(--text-dim); }
+    .video-empty-sub  { font-size: 12px; color: var(--text-muted); max-width: 280px; }
 
     video {
       width: 100%;
@@ -682,11 +1044,10 @@
       object-fit: contain;
       display: none;
     }
-
     video.loaded { display: block; }
 
     .video-footer {
-      padding: 12px 18px;
+      padding: 10px 16px;
       border-top: 1px solid var(--border);
       background: var(--bg1);
       display: flex;
@@ -700,6 +1061,15 @@
       font-size: 11px;
       color: var(--text-dim);
       font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .video-footer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .download-btn {
@@ -715,231 +1085,552 @@
       border-radius: var(--radius-sm);
       text-decoration: none;
       transition: all 0.2s;
+      cursor: pointer;
     }
-
     .download-btn:hover {
       background: var(--amber-glow);
       border-color: var(--amber);
       color: var(--amber-light);
     }
 
-    /* ── SRT / Subtitle Card ───────────────────────────────── */
-    .srt-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 220px;
-      transition: border-color 0.2s, background 0.2s;
-      position: relative;
-      cursor: pointer;
-    }
-
-    .srt-card:hover {
-      border-color: var(--border-hi);
-      background: var(--bg3);
-    }
-
-    .srt-card.drag-over {
-      border-color: var(--amber);
-      background: var(--amber-glow);
-      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
-    }
-
-    .srt-card.has-file {
-      border-color: rgba(16, 185, 129, 0.4);
-    }
-
-    .srt-icon {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #0ea5e9, #0284c7);
-      border-radius: 8px;
-      display: grid;
-      place-items: center;
-      font-size: 16px;
-      flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
-      transition: background 0.2s;
-    }
-
-    .srt-card.has-file .srt-icon {
-      background: linear-gradient(135deg, #10b981, #059669);
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-    }
-
-    .srt-info { flex: 1; min-width: 0; }
-
-    .srt-name {
-      font-size: 13px;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .srt-meta {
-      font-size: 11px;
-      color: var(--text-dim);
-      font-family: 'JetBrains Mono', monospace;
-      margin-top: 1px;
-    }
-
-    .srt-clear {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: var(--red);
-      font-size: 11px;
-      cursor: pointer;
+    /* ── Modals & Overlays ─────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
       display: none;
       place-items: center;
-      flex-shrink: 0;
-      transition: background 0.2s;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: grid; }
+
+    .modal-card {
+      background: var(--bg1);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 720px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .srt-clear:hover { background: rgba(239, 68, 68, 0.3); }
-    .srt-card.has-file .srt-clear { display: grid; }
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
 
-    .srt-card:not(.has-file) .srt-clear { display: none !important; }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
 
-    #srtFileInput { display: none; }
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-    /* ── Transcribe Button ─────────────────────────────── */
-    .transcribe-btn {
+    .modal-close {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-xs);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+    .modal-close:hover { background: var(--bg4); color: var(--text); }
+
+    .modal-body {
+      padding: 16px 20px;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg2);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Subtitle Editor Modal Styles */
+    .srt-cues-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .srt-cue-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .srt-cue-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 24px;
+      padding-top: 4px;
+    }
+    .srt-cue-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .srt-cue-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--amber-light);
+    }
+    .srt-cue-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12.5px;
+      padding: 6px 8px;
+      outline: none;
+      resize: vertical;
+    }
+    .srt-cue-input:focus { border-color: var(--amber); }
+
+    /* Lightbox Modal */
+    .lightbox-img-wrap {
+      width: 100%;
+      height: 400px;
+      background: #000;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+    .lightbox-img-wrap img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    /* Keyboard Shortcuts Modal */
+    .shortcut-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .shortcut-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+    .shortcut-table td {
+      padding: 10px 4px;
+      font-size: 12.5px;
+    }
+    .kbd {
+      display: inline-block;
+      padding: 2px 7px;
+      background: var(--bg3);
+      border: 1px solid var(--border-hi);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--amber-light);
+      font-weight: 600;
+    }
+
+    /* ── Subtitle Style Studio Modal Styles ─────────────────────────── */
+    .sub-preview-box {
+      background: radial-gradient(circle at center, #1a1c32 0%, #070812 100%);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-md);
+      position: relative;
+      padding: 24px 20px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 130px;
+      overflow: hidden;
+      box-shadow: inset 0 2px 16px rgba(0,0,0,0.7);
+    }
+    .sub-preview-tag {
+      position: absolute;
+      top: 8px;
+      left: 12px;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      color: var(--amber-light);
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .sub-preview-stage {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 10px 0;
+      min-height: 60px;
+    }
+    .sub-preview-text {
+      display: inline-block;
+      max-width: 90%;
+      word-wrap: break-word;
+      line-height: 1.3;
+      padding: 4px 12px;
+      border-radius: 4px;
+      transition: all 0.15s ease-out;
+    }
+    .sub-preview-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 4px;
+    }
+    .sub-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sub-section-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 11px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: inherit;
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      background: rgba(14, 165, 233, 0.08);
-      color: #38bdf8;
-      cursor: pointer;
-      transition: all 0.2s;
-      white-space: nowrap;
-      flex-shrink: 0;
     }
-    .transcribe-btn:hover:not(:disabled) {
-      background: rgba(14, 165, 233, 0.2);
-      border-color: #38bdf8;
+    .sub-presets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 8px;
     }
-    .transcribe-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .transcribe-btn.running {
-      color: var(--amber-light);
-      border-color: rgba(245, 158, 11, 0.5);
-      background: var(--amber-glow);
-      animation: pulse 1.2s infinite;
-    }
-    /* hide when SRT already loaded */
-    .srt-card.has-file .transcribe-btn { display: none; }
-
-    /* ── Effect Chips ────────────────────────────────── */
-    .effects-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .sub-preset-card {
       background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 7px 14px;
-      min-width: 0;
-      flex: 1;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: all 0.2s;
+      font-family: inherit;
     }
-    .effects-label {
+    .sub-preset-card:hover {
+      background: var(--bg3);
+      border-color: var(--amber);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+    }
+    .sub-preset-card .preset-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .sub-preset-card .preset-desc {
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+    .sub-controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 680px) {
+      .sub-controls-grid { grid-template-columns: 1fr; }
+    }
+    .sub-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+    }
+    .sub-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sub-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+    .sub-val-badge {
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      color: var(--text-dim);
-      white-space: nowrap;
-      flex-shrink: 0;
+      color: var(--amber-light);
+      background: var(--bg3);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
     }
-    .effects-chips {
+    .sub-select {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+      padding: 6px 10px;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .sub-select:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 2px var(--amber-glow);
+    }
+    .sub-slider {
+      width: 100%;
+      accent-color: var(--amber);
+      cursor: pointer;
+      height: 4px;
+      background: var(--bg3);
+      border-radius: 2px;
+    }
+    .sub-pills-row {
       display: flex;
-      gap: 5px;
-      overflow-x: auto;
-      flex: 1;
-      scrollbar-width: none;
-      padding: 2px 0;
+      gap: 6px;
+      margin-top: 2px;
+      flex-wrap: wrap;
     }
-    .effects-chips::-webkit-scrollbar { display: none; }
-    .effect-chip {
+    .sub-pill-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sub-pill-btn:hover {
+      background: var(--bg4);
+      color: var(--text);
+      border-color: var(--border-hi);
+    }
+    .sub-toggles-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .sub-toggle-btn {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: var(--radius-sm);
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 3px;
-      padding: 4px 10px;
-      border-radius: 20px;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .sub-toggle-btn:hover {
+      background: var(--bg4);
+      color: var(--text);
+    }
+    .sub-toggle-btn.active {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: var(--amber);
+      color: var(--amber-light);
+    }
+    .color-picker-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sub-color-input {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      background: none;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      padding: 0;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .sub-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+    .sub-color-input::-webkit-color-swatch { border: none; border-radius: 4px; }
+    .color-swatches {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .color-swatch {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.25);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .color-swatch:hover {
+      transform: scale(1.2);
+      border-color: #fff;
+      box-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+    .sub-position-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      flex-wrap: wrap;
+    }
+    .sub-pos-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: var(--radius-sm);
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .sub-pos-btn:hover { background: var(--bg4); color: var(--text); }
+    .sub-pos-btn.active {
+      background: var(--amber-glow);
+      border-color: var(--amber);
+      color: var(--amber-light);
+    }
+    .srt-style-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 9px;
+      border-radius: 14px;
       font-size: 11px;
       font-weight: 600;
       font-family: inherit;
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      color: var(--text-dim);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--amber-light);
       cursor: pointer;
       transition: all 0.15s;
       white-space: nowrap;
-      flex-shrink: 0;
-      user-select: none;
     }
-    .effect-chip:hover:not(.active) { border-color: var(--border-hi); color: var(--text); }
-    .effect-chip.active {
-      background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06));
-      border-color: rgba(245, 158, 11, 0.55);
-      color: var(--amber-light);
+    .srt-style-btn:hover {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: var(--amber);
+      box-shadow: 0 0 8px var(--amber-glow);
     }
-    .effect-chip.nudge { animation: nudge 0.35s ease; }
-    @keyframes nudge {
-      0%,100% { transform: translateX(0); }
-      30% { transform: translateX(-4px); }
-      70% { transform: translateX(4px); }
+
+    /* ── Toast Notifications ───────────────────────────────────────────── */
+    .toast-container {
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
     }
-    .effects-all-btn {
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 700;
-      font-family: inherit;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-      flex-shrink: 0;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
+
+    .toast {
+      padding: 10px 16px;
+      background: var(--bg2);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      color: var(--text);
+      font-size: 12.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto;
     }
-    .effects-all-btn.all-on {
-      color: var(--amber-light);
-      border-color: rgba(245, 158, 11, 0.45);
+    .toast.success { border-color: rgba(16, 185, 129, 0.5); color: var(--green-light); }
+    .toast.error   { border-color: rgba(239, 68, 68, 0.5); color: var(--red-light); }
+    .toast.info    { border-color: rgba(14, 165, 233, 0.5); color: var(--cyan-light); }
+
+    @keyframes toastIn {
+      0% { opacity: 0; transform: translateX(20px); }
+      100% { opacity: 1; transform: translateX(0); }
     }
-    .effects-all-btn:hover { color: var(--amber-light); border-color: var(--amber); }
   </style>
 </head>
 <body>
+
 <div class="app">
 
-  <!-- ── Header ───────────────────────────────────────────── -->
+  <!-- ── Top Header ───────────────────────────────────────────── -->
   <header>
     <a href="/" class="logo">
       <div class="logo-icon">🎬</div>
       <span class="logo-text">Video Edit <span>Studio</span></span>
     </a>
+    
     <div class="engine-badge" title="High-performance C / AVX2 multi-threaded rendering pipeline">
       <span>⚡</span> Native FFmpeg Turbo
     </div>
+
     <div class="header-sep"></div>
+
     <div class="header-actions">
-      <button class="icon-btn" title="Refresh data" onclick="init()">🔄</button>
+      <button class="icon-btn" onclick="openShortcutsModal()" title="Keyboard Shortcuts">
+        ⌨️ <span>Shortcuts</span>
+      </button>
+      <button class="icon-btn" onclick="init()" title="Refresh state">
+        🔄 <span>Refresh</span>
+      </button>
       <div class="header-badge">
         <div class="status-dot" id="statusDot"></div>
         <span id="statusText">Connecting...</span>
@@ -947,39 +1638,56 @@
     </div>
   </header>
 
-  <!-- ── Sidebar: image list ──────────────────────────────── -->
+  <!-- ── Left Sidebar: Source Timeline Clips ──────────────────── -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title-row">
-        <span class="sidebar-title">Source Timeline</span>
-        <span class="count-badge" id="imgCount">0</span>
+        <span class="sidebar-title">
+          <span>🎞</span> Source Timeline
+        </span>
+        <span class="stats-pill" id="imgCount">0 clips</span>
       </div>
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search timestamp or name..." oninput="filterImages()" />
+
+      <div class="sidebar-search-row">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search [M-SS] or keyword..." oninput="filterImages()" />
+          <button class="search-clear" onclick="clearSearch()" title="Clear search">✕</button>
+        </div>
       </div>
     </div>
+
     <div class="image-list" id="imageList">
       <div style="padding:40px;color:var(--text-muted);font-size:12px;text-align:center">Loading timeline images...</div>
     </div>
   </aside>
 
-  <!-- ── Main ─────────────────────────────────────────────── -->
+  <!-- ── Right Main Section ───────────────────────────────────── -->
   <main class="main">
 
-    <!-- top controls -->
-    <div class="main-top">
+    <!-- Top Toolbar Controls -->
+    <div class="studio-toolbar">
 
-      <!-- Audio card -->
-      <div class="audio-card">
-        <div class="audio-icon">🎵</div>
+      <!-- Integrated Audio Player Card -->
+      <div class="audio-card" id="audioCard">
+        <button class="audio-icon-btn" id="audioPlayBtn" onclick="toggleAudioPlayback()" title="Play / Pause Audio Track">
+          ▶
+        </button>
         <div class="audio-info">
           <div class="audio-name" id="audioName">Checking audio...</div>
-          <div class="audio-meta" id="audioMeta">—</div>
+          <div class="audio-meta">
+            <span id="audioCurrentTime">0:00</span> / <span id="audioDuration">0:00</span>
+            <span style="color:var(--text-muted)">·</span>
+            <span id="audioSize">—</span>
+          </div>
+          <div class="audio-scrubber" id="audioScrubber" onclick="seekAudio(event)">
+            <div class="audio-progress" id="audioProgress"></div>
+          </div>
         </div>
+        <audio id="audioElement" preload="auto"></audio>
       </div>
 
-      <!-- SRT Subtitle Card -->
+      <!-- SRT Subtitle Upload & Whisper AI Card -->
       <input type="file" id="srtFileInput" accept=".srt" onchange="handleSrtFileInput(this)" />
       <div class="srt-card" id="srtCard"
            onclick="triggerSrtPicker(event)"
@@ -989,33 +1697,47 @@
         <div class="srt-icon" id="srtIcon">💬</div>
         <div class="srt-info">
           <div class="srt-name" id="srtName">Add Subtitles</div>
-          <div class="srt-meta" id="srtMeta">Drop or click to upload .srt file</div>
+          <div class="srt-meta" id="srtMeta">Drop or click .srt file</div>
         </div>
-        <button class="srt-clear" id="srtClear"
-                onclick="clearSrt(event)"
-                title="Remove subtitle file">✕</button>
-        <button class="transcribe-btn" id="transcribeBtn"
-                onclick="startTranscription(event)"
-                title="Auto-generate subtitles from audio using Whisper AI (base model)">
-          🎤 Transcribe
+        <div class="srt-actions" onclick="event.stopPropagation()">
+          <button type="button" class="srt-style-btn" id="srtStyleBtn" onclick="openSubtitleStyleModal(event)" title="Subtitle Styling & Typography Studio">
+            🎨 Style
+          </button>
+          <button type="button" class="srt-edit-btn" id="srtEditBtn" onclick="openSubtitleModal(event)" title="View & Edit Captions">
+            📝 Edit
+          </button>
+          <button type="button" class="transcribe-btn" id="transcribeBtn" onclick="startTranscription(event)" title="Auto-transcribe with Whisper AI">
+            🎤 Transcribe
+          </button>
+          <button type="button" class="srt-clear" id="srtClear" onclick="clearSrt(event)" title="Remove subtitles">✕</button>
+        </div>
+      </div>
+
+      <!-- Motion Mode Toggle (Ken Burns vs Static) -->
+      <div class="motion-toggle-wrap">
+        <button class="motion-mode-btn active" id="motionBtnKenBurns" onclick="setMotionMode('ken-burns')" title="Cinematic camera pans and smooth zooms">
+          <span>🎬</span> Ken Burns
+        </button>
+        <button class="motion-mode-btn" id="motionBtnStatic" onclick="setMotionMode('static')" title="Clean static slides (Zero camera motion)">
+          <span>🖼</span> Static Slides
         </button>
       </div>
 
       <!-- Resolution Selector -->
       <div class="res-group" id="resGroup">
-        <button class="res-btn" data-res="720p" onclick="setResolution('720p')" title="720p HD Draft (Fastest preview in ~1 min)">
-          <span>⚡</span> 720p Draft
+        <button class="res-btn" data-res="720p" onclick="setResolution('720p')" title="720p HD Draft (Fastest preview)">
+          <span>⚡</span> 720p
         </button>
         <button class="res-btn active" data-res="1080p" onclick="setResolution('1080p')" title="1080p Full HD (Crisp quality)">
-          <span>🌟</span> 1080p Full HD
+          <span>🌟</span> 1080p
         </button>
         <button class="res-btn" data-res="2k" onclick="setResolution('2k')" title="2K QHD 1440p (Ultra fidelity)">
           <span>🚀</span> 2K QHD
         </button>
       </div>
 
-      <!-- Effect Selection Chips -->
-      <div class="effects-section">
+      <!-- Motion Effects Matrix -->
+      <div class="effects-section" id="effectsSection">
         <span class="effects-label">🎥 Effects</span>
         <div class="effects-chips" id="effectsChips">
           <button class="effect-chip active" data-effect="zoom-in"   onclick="toggleEffect(this)">🔍 Zoom In</button>
@@ -1029,79 +1751,391 @@
           <button class="effect-chip active" data-effect="push-in"   onclick="toggleEffect(this)">🎯 Push In</button>
           <button class="effect-chip active" data-effect="pull-out"  onclick="toggleEffect(this)">🌅 Pull Out</button>
         </div>
-        <button class="effects-all-btn all-on" id="allEffectsBtn"
-                onclick="toggleAllEffects()"
-                title="Toggle all effects on / off">All ✓</button>
+        <button class="effects-quick-btn" id="allEffectsBtn" onclick="toggleAllEffects()" title="Select All / Reset">All ✓</button>
       </div>
 
-      <!-- Generate button -->
+      <!-- Action Buttons -->
       <button class="generate-btn" id="generateBtn" onclick="startGeneration()">
         <span class="spinner"></span>
         <span class="btn-icon">▶</span>
         <span id="btnLabel">Generate Video</span>
       </button>
 
-      <!-- Cancel button -->
       <button class="cancel-btn" id="cancelBtn" onclick="cancelGeneration()">
         ✕ Cancel
       </button>
 
     </div>
 
-    <!-- main 2-column body -->
-    <div class="main-body">
+    <!-- Main Workspace Panels (Render & Player) -->
+    <div class="studio-workspace">
 
-      <!-- Left Column: Render Logs & Progress -->
+      <!-- Left Panel: Render Progress & Console -->
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">⚡ Render Progress</span>
+          <span class="panel-title">
+            <span>⚡</span> Render Progress & Console
+          </span>
           <span class="progress-pct" id="progressPct">0%</span>
         </div>
+
         <div class="progress-bar-wrap">
           <div class="progress-bar-fill" id="progressBar"></div>
         </div>
+
+        <div class="console-toolbar">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="autoScrollCheck" checked /> Auto-scroll
+          </label>
+          <div class="console-actions">
+            <button class="console-btn" onclick="clearLogs()">Clear</button>
+            <button class="console-btn" onclick="copyLogs()">Copy Logs</button>
+          </div>
+        </div>
+
         <div class="log-output" id="logOutput">
           <div class="log-placeholder">Click "Generate Video" to begin rendering the timeline</div>
         </div>
       </div>
 
-      <!-- Right Column: Video Preview & Download -->
+      <!-- Right Panel: Video Studio Player -->
       <div class="video-panel">
         <div class="panel-header">
-          <span class="panel-title">🎞 Output Preview</span>
+          <span class="panel-title">
+            <span>🎞</span> Output Preview
+          </span>
+          <span class="dur-badge" id="videoTimecode">00:00 / 00:00</span>
         </div>
+
         <div class="video-wrap" id="videoWrap">
           <div class="video-empty" id="videoEmpty">
             <div class="video-empty-icon">🎬</div>
             <div class="video-empty-text">No video rendered yet</div>
-            <div class="video-empty-sub">Generated video will appear and play here automatically</div>
+            <div class="video-empty-sub">Configure your settings and click "Generate Video" to produce the final MP4.</div>
           </div>
           <video id="videoPlayer" controls preload="auto"></video>
         </div>
+
         <div class="video-footer" id="videoFooter" style="display:none">
           <div class="video-info-text" id="videoMetaText">—</div>
-          <a class="download-btn" id="downloadBtn" href="/output.mp4" download="output.mp4">
-            ⬇ Download MP4
-          </a>
+          <div class="video-footer-actions">
+            <button class="download-btn" onclick="reloadVideo()" title="Reload output video">
+              🔄 Reload
+            </button>
+            <a class="download-btn" id="downloadBtn" href="/output.mp4" download="output.mp4">
+              ⬇ Download MP4
+            </a>
+          </div>
         </div>
       </div>
 
     </div>
+
   </main>
 </div>
 
+<!-- ── Toast Notifications ─────────────────────────────────────────── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ── Subtitle Typography & Style Studio Modal ────────────────────── -->
+<div class="modal-overlay" id="subtitleStyleModal" onclick="closeSubtitleStyleModal(event)">
+  <div class="modal-card" style="max-width:820px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span>🎨</span> Subtitle Typography & Style Studio
+      </div>
+      <button class="modal-close" onclick="closeSubtitleStyleModal()">✕</button>
+    </div>
+
+    <div class="modal-body" style="gap: 16px;">
+
+      <!-- Live Interactive Preview Box -->
+      <div class="sub-preview-box" id="subPreviewContainer">
+        <div class="sub-preview-tag">LIVE PREVIEW</div>
+        <div class="sub-preview-stage" id="subPreviewStage">
+          <div class="sub-preview-text" id="subPreviewText">
+            The quick brown fox jumps over the lazy dog.
+          </div>
+        </div>
+        <div class="sub-preview-meta" id="subPreviewMeta">
+          Font: Inter · Size: 42px · Bottom Center
+        </div>
+      </div>
+
+      <!-- Quick 1-Click Style Presets -->
+      <div class="sub-section">
+        <div class="sub-section-title">⚡ 1-Click Style Presets</div>
+        <div class="sub-presets-grid">
+          <button type="button" class="sub-preset-card" onclick="applyPreset('classic')">
+            <span class="preset-name">🌟 Classic Clean</span>
+            <span class="preset-desc">Inter · White · Thin Outline</span>
+          </button>
+          <button type="button" class="sub-preset-card" onclick="applyPreset('viral')">
+            <span class="preset-name">🔥 Viral Shorts / TikTok</span>
+            <span class="preset-desc">Impact · Yellow · Bold ALL CAPS</span>
+          </button>
+          <button type="button" class="sub-preset-card" onclick="applyPreset('netflix')">
+            <span class="preset-name">📺 Netflix / Documentary</span>
+            <span class="preset-desc">Roboto · Translucent Box · Crisp</span>
+          </button>
+          <button type="button" class="sub-preset-card" onclick="applyPreset('cyberpunk')">
+            <span class="preset-name">⚡ Cyberpunk Neon</span>
+            <span class="preset-desc">JetBrains Mono · Cyan · Dark Shadow</span>
+          </button>
+          <button type="button" class="sub-preset-card" onclick="applyPreset('warm')">
+            <span class="preset-name">🌸 Sunset Warm</span>
+            <span class="preset-desc">Montserrat · Gold · Soft Stroke</span>
+          </button>
+          <button type="button" class="sub-preset-card" onclick="applyPreset('minimal')">
+            <span class="preset-name">💎 Minimal Italic</span>
+            <span class="preset-desc">Montserrat · Italic · Soft Shadow</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Controls Grid (2 Columns) -->
+      <div class="sub-controls-grid">
+
+        <!-- Column 1: Typography & Size -->
+        <div class="sub-col">
+          <div class="sub-section-title">🔤 Font & Typography</div>
+
+          <div class="sub-field">
+            <label class="sub-label" for="subFontFamily">Font Family</label>
+            <select class="sub-select" id="subFontFamily" onchange="onSubtitleSettingChange()">
+              <option value="Inter">Inter (Clean Modern Sans)</option>
+              <option value="Impact">Impact (Viral Punchy / Bold)</option>
+              <option value="Montserrat">Montserrat (Geometric Modern)</option>
+              <option value="Roboto">Roboto (Neo-Grotesque)</option>
+              <option value="Arial">Arial (Standard Sans)</option>
+              <option value="Segoe UI">Segoe UI (Windows UI)</option>
+              <option value="Trebuchet MS">Trebuchet MS (Dynamic)</option>
+              <option value="Georgia">Georgia (Serif Classic)</option>
+              <option value="JetBrains Mono">JetBrains Mono (Monospace Tech)</option>
+            </select>
+          </div>
+
+          <div class="sub-field">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label class="sub-label" for="subFontSize">Font Size</label>
+              <span class="sub-val-badge" id="subFontSizeVal">42px</span>
+            </div>
+            <input type="range" class="sub-slider" id="subFontSize" min="20" max="80" value="42" oninput="onSubtitleSettingChange()" />
+            <div class="sub-pills-row">
+              <button type="button" class="sub-pill-btn" onclick="setFontSize(32)">Small (32)</button>
+              <button type="button" class="sub-pill-btn" onclick="setFontSize(42)">Medium (42)</button>
+              <button type="button" class="sub-pill-btn" onclick="setFontSize(54)">Large (54)</button>
+              <button type="button" class="sub-pill-btn" onclick="setFontSize(68)">X-Large (68)</button>
+            </div>
+          </div>
+
+          <div class="sub-field">
+            <label class="sub-label">Text Formatting</label>
+            <div class="sub-toggles-row">
+              <button type="button" class="sub-toggle-btn" id="subBoldBtn" onclick="toggleSubStyle('bold')">
+                <b>B</b> Bold
+              </button>
+              <button type="button" class="sub-toggle-btn" id="subItalicBtn" onclick="toggleSubStyle('italic')">
+                <i>I</i> Italic
+              </button>
+              <button type="button" class="sub-toggle-btn" id="subUpperBtn" onclick="toggleSubStyle('uppercase')">
+                🔠 ALL CAPS
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Colors, Stroke & Box -->
+        <div class="sub-col">
+          <div class="sub-section-title">🎨 Colors, Stroke & Banner</div>
+
+          <div class="sub-field">
+            <label class="sub-label" for="subPrimaryColor">Primary Text Color</label>
+            <div class="color-picker-row">
+              <input type="color" class="sub-color-input" id="subPrimaryColor" value="#ffffff" oninput="onSubtitleSettingChange()" />
+              <div class="color-swatches">
+                <span class="color-swatch" style="background:#ffffff" onclick="setPrimaryColor('#ffffff')" title="Pure White"></span>
+                <span class="color-swatch" style="background:#ffd700" onclick="setPrimaryColor('#ffd700')" title="Cyber Yellow"></span>
+                <span class="color-swatch" style="background:#00f0ff" onclick="setPrimaryColor('#00f0ff')" title="Electric Cyan"></span>
+                <span class="color-swatch" style="background:#39ff14" onclick="setPrimaryColor('#39ff14')" title="Neon Green"></span>
+                <span class="color-swatch" style="background:#ff2a85" onclick="setPrimaryColor('#ff2a85')" title="Hot Pink"></span>
+                <span class="color-swatch" style="background:#ff8c00" onclick="setPrimaryColor('#ff8c00')" title="Warm Orange"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sub-field">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label class="sub-label" for="subOutlineColor">Outline / Stroke</label>
+              <span class="sub-val-badge" id="subOutlineVal">2.5px</span>
+            </div>
+            <div class="color-picker-row" style="margin-bottom:6px">
+              <input type="color" class="sub-color-input" id="subOutlineColor" value="#000000" oninput="onSubtitleSettingChange()" />
+              <div class="color-swatches">
+                <span class="color-swatch" style="background:#000000" onclick="setOutlineColor('#000000')" title="Black Stroke"></span>
+                <span class="color-swatch" style="background:#0f172a" onclick="setOutlineColor('#0f172a')" title="Deep Navy"></span>
+                <span class="color-swatch" style="background:#451a03" onclick="setOutlineColor('#451a03')" title="Deep Brown"></span>
+                <span class="color-swatch" style="background:#1e1b4b" onclick="setOutlineColor('#1e1b4b')" title="Dark Purple"></span>
+              </div>
+            </div>
+            <input type="range" class="sub-slider" id="subOutlineWidth" min="0" max="6" step="0.5" value="2.5" oninput="onSubtitleSettingChange()" />
+          </div>
+
+          <div class="sub-field">
+            <label class="sub-label" for="subBorderStyle">Background & Shadow Style</label>
+            <select class="sub-select" id="subBorderStyle" onchange="onSubtitleSettingChange()">
+              <option value="1">Outline with Drop Shadow</option>
+              <option value="3">Semi-Transparent Background Banner Box</option>
+              <option value="3-opaque">Opaque High-Contrast Black Box</option>
+              <option value="1-clean">Minimal (Shadow Only / No Stroke)</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Position & Margins Row -->
+      <div class="sub-section">
+        <div class="sub-section-title">📍 Position & Animation</div>
+        <div class="sub-position-row">
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="sub-pos-btn active" id="posBtn2" data-align="2" onclick="setSubAlign(2)">⬇ Bottom</button>
+            <button type="button" class="sub-pos-btn" id="posBtn8" data-align="8" onclick="setSubAlign(8)">⏺ Middle</button>
+            <button type="button" class="sub-pos-btn" id="posBtn5" data-align="5" onclick="setSubAlign(5)">⬆ Top</button>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;gap:10px;min-width:180px;">
+            <span style="font-size:11.5px;color:var(--text-dim);white-space:nowrap">Margin Offset:</span>
+            <input type="range" class="sub-slider" id="subMarginV" min="10" max="150" value="40" oninput="onSubtitleSettingChange()" style="flex:1;" />
+            <span class="sub-val-badge" id="subMarginVVal">40px</span>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-dim)">
+            <input type="checkbox" id="subFadeIn" checked onchange="onSubtitleSettingChange()" /> 200ms Smooth Fade-in
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="icon-btn" onclick="resetSubtitleSettings()">🔄 Reset Defaults</button>
+      <button type="button" class="icon-btn" onclick="closeSubtitleStyleModal()">Cancel</button>
+      <button type="button" class="generate-btn" style="height:34px;padding:0 18px;font-size:12px" onclick="saveSubtitleSettings()">
+        💾 Save & Apply Style
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Subtitle Inspector / Editor Modal ───────────────────────────── -->
+<div class="modal-overlay" id="subtitleModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span>📝</span> Subtitle Cues Inspector & Editor
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" class="srt-style-btn" onclick="openSubtitleStyleModal(event)">
+          🎨 Customize Style
+        </button>
+        <button class="modal-close" onclick="closeSubtitleModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--text-dim)" id="subtitleCuesCount">0 caption cues</span>
+        <a href="/subtitles/subtitles.srt" download="subtitles.srt" class="icon-btn" style="text-decoration:none">
+          ⬇ Export .SRT
+        </a>
+      </div>
+      <div class="srt-cues-list" id="subtitleCuesList">
+        <!-- populated via JS -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="icon-btn" onclick="closeSubtitleModal()">Cancel</button>
+      <button class="generate-btn" style="height:34px;padding:0 16px;font-size:12px" onclick="saveSubtitleEdits()">
+        💾 Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Lightbox Image Modal ────────────────────────────────────────── -->
+<div class="modal-overlay" id="lightboxModal" onclick="closeLightboxModal(event)">
+  <div class="modal-card" style="max-width:860px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="lightboxTitle">
+        <span>🖼</span> Image Preview
+      </div>
+      <button class="modal-close" onclick="closeLightboxModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="lightbox-img-wrap">
+        <img id="lightboxImg" src="" alt="Preview" />
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+        <span class="dur-badge" id="lightboxMeta">—</span>
+        <button class="icon-btn" id="lightboxJumpBtn" onclick="jumpToCurrentLightboxClip()">
+          ▶ Jump to this clip in video
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Keyboard Shortcuts Modal ────────────────────────────────────── -->
+<div class="modal-overlay" id="shortcutsModal" onclick="closeShortcutsModal(event)">
+  <div class="modal-card" style="max-width:480px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span>⌨️</span> Studio Keyboard Shortcuts
+      </div>
+      <button class="modal-close" onclick="closeShortcutsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <table class="shortcut-table">
+        <tr><td><span class="kbd">Space</span></td><td>Play / Pause Video Output</td></tr>
+        <tr><td><span class="kbd">J</span> / <span class="kbd">L</span></td><td>Seek 5 seconds backward / forward</td></tr>
+        <tr><td><span class="kbd">M</span></td><td>Mute / Unmute Video & Audio</td></tr>
+        <tr><td><span class="kbd">F</span></td><td>Toggle Fullscreen Video</td></tr>
+        <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span></td><td>Start Video Generation</td></tr>
+        <tr><td><span class="kbd">Esc</span></td><td>Close Modals</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Script Logic ────────────────────────────────────────────────── -->
 <script>
   const ALL_EFFECT_LABELS = ['zoom-in','zoom-out','pan-left','pan-right','pan-up','pan-down','diag-tl','diag-br','push-in','pull-out'];
-  let allImages        = [];
+  let allImages          = [];
   let selectedResolution = '1080p';
-  let activeEffects    = new Set(ALL_EFFECT_LABELS);
-  let isTranscribing   = false;
-  let abortCtrl        = null;
-  let hasSrtFile       = false;
+  let selectedMotionMode = 'ken-burns'; // 'ken-burns' | 'static'
+  let activeEffects      = new Set(ALL_EFFECT_LABELS);
+  let isTranscribing     = false;
+  let isGeneratingVideo  = false;
+  let abortCtrl          = null;
+  let activeLightboxImg  = null;
+  let loadedSubtitleCues = [];
 
   // ── Init ──────────────────────────────────────────────────────────────────
   async function init() {
-    await Promise.all([loadImages(), loadInfo()]);
+    await Promise.all([loadImages(), loadInfo(), loadSubtitleSettingsFromServer()]);
+  }
+
+  // ── Toast System ──────────────────────────────────────────────────────────
+  function showToast(msg, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+    toast.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s';
+      setTimeout(() => toast.remove(), 300);
+    }, 3500);
   }
 
   // ── Load image list ───────────────────────────────────────────────────────
@@ -1110,7 +2144,7 @@
       const r = await fetch('/api/images');
       const data = await r.json();
       allImages = data.images || [];
-      document.getElementById('imgCount').textContent = allImages.length;
+      document.getElementById('imgCount').textContent = `${allImages.length} clips`;
       renderImageList(allImages);
     } catch (e) {
       document.getElementById('imageList').innerHTML =
@@ -1131,55 +2165,84 @@
     renderImageList(filtered);
   }
 
+  function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    renderImageList(allImages);
+  }
+
   function renderImageList(images) {
     const list = document.getElementById('imageList');
     if (!images.length) {
-      list.innerHTML = '<div style="padding:30px;color:var(--text-muted);font-size:12px;text-align:center">No matching images</div>';
+      list.innerHTML = '<div style="padding:30px;color:var(--text-muted);font-size:12px;text-align:center">No matching timeline images</div>';
       return;
     }
-    list.innerHTML = images.map(img => `
-      <div class="image-item" title="${img.name}">
-        <div class="img-thumb">
-          <img src="/image/${encodeURIComponent(img.name)}"
-               loading="lazy"
-               onerror="this.style.display='none'"
-               alt="" />
-        </div>
-        <div class="img-meta">
-          <div class="img-meta-top">
-            <span class="ts-badge">${img.timestamp.label}</span>
-            <span class="dur-badge">${img.durationSec ? img.durationSec + 's' : ''}</span>
+    list.innerHTML = images.map((img, idx) => {
+      const cleanName = img.name.replace(/^\[\d+-\d+\]_?/, '');
+      return `
+        <div class="image-item" id="img-item-${img.timestamp.total}" onclick="seekToClip(${img.timestamp.total})" title="Click to seek video to ${img.timestamp.label}">
+          <div class="img-thumb">
+            <img src="/image/${encodeURIComponent(img.name)}"
+                 loading="lazy"
+                 onerror="this.style.display='none'"
+                 alt="${cleanName}" />
           </div>
-          <span class="img-name">${img.name.replace(/^\[\d+-\d+\]_?/, '')}</span>
+          <div class="img-meta">
+            <div class="img-meta-top">
+              <span class="ts-badge">${img.timestamp.label}</span>
+              <span class="dur-badge">${img.durationSec ? img.durationSec + 's' : ''}</span>
+              <span class="effect-badge">#${idx + 1}</span>
+            </div>
+            <span class="img-name">${cleanName}</span>
+          </div>
+          <button class="img-preview-btn" onclick="openLightbox('${encodeURIComponent(img.name)}', '${img.timestamp.label}', '${img.durationSec || 0}', event)" title="Preview Full Image">
+            🔍
+          </button>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
-  // ── Load server & audio info ──────────────────────────────────────────────
+  function seekToClip(timestampSec) {
+    const player = document.getElementById('videoPlayer');
+    if (player && player.classList.contains('loaded')) {
+      player.currentTime = timestampSec;
+      player.play().catch(() => {});
+      showToast(`Jumped to ${formatTime(timestampSec)}`, 'info');
+    } else {
+      showToast(`Timeline cue: ${formatTime(timestampSec)} (Render video to preview playback)`, 'info');
+    }
+  }
+
+  // ── Load Server, Audio & Video Info ───────────────────────────────────────
   async function loadInfo() {
     try {
       const r = await fetch('/api/info');
       const data = await r.json();
 
-      // Audio
+      // Audio setup
       if (data.audio) {
         document.getElementById('audioName').textContent = data.audio.name;
-        document.getElementById('audioMeta').textContent =
-          `${data.audio.durationFormatted || '—'} · ${formatBytes(data.audio.size)} · MP3`;
+        document.getElementById('audioDuration').textContent = data.audio.durationFormatted || '—';
+        document.getElementById('audioSize').textContent = `${formatBytes(data.audio.size)} · MP3`;
+        
+        const audioEl = document.getElementById('audioElement');
+        audioEl.src = `/audio/${encodeURIComponent(data.audio.name)}`;
       } else {
         document.getElementById('audioName').textContent = 'No audio file found';
-        document.getElementById('audioMeta').textContent = 'Expected at audio/untitled.mp3';
+        document.getElementById('audioDuration').textContent = '—';
+        document.getElementById('audioSize').textContent = 'Expected at audio/untitled.mp3';
       }
 
-      // Output
+      // Output video
       if (data.output) {
         showVideo(data.output);
       }
 
-      // Subtitle
+      // Subtitles
       if (data.subtitle) {
-        setSrtUI(data.subtitle.name, data.subtitle.size, null);
+        setSrtUI(data.subtitle.name, data.subtitle.size, data.subtitle.entries);
+      } else {
+        setSrtUI(null);
       }
 
       // Status
@@ -1195,7 +2258,63 @@
     }
   }
 
-  // ── UI Controls ───────────────────────────────────────────────────────────
+  // ── Audio Player Controls ─────────────────────────────────────────────────
+  const audioEl = document.getElementById('audioElement');
+  const audioPlayBtn = document.getElementById('audioPlayBtn');
+  const audioProgress = document.getElementById('audioProgress');
+  const audioCurrentTime = document.getElementById('audioCurrentTime');
+
+  function toggleAudioPlayback() {
+    if (!audioEl.src) return;
+    if (audioEl.paused) {
+      audioEl.play().catch(() => {});
+      audioPlayBtn.textContent = '⏸';
+      audioPlayBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+    } else {
+      audioEl.pause();
+      audioPlayBtn.textContent = '▶';
+      audioPlayBtn.style.background = 'linear-gradient(135deg, #8b5cf6, #6366f1)';
+    }
+  }
+
+  audioEl.addEventListener('timeupdate', () => {
+    if (audioEl.duration) {
+      const pct = (audioEl.currentTime / audioEl.duration) * 100;
+      audioProgress.style.width = pct + '%';
+      audioCurrentTime.textContent = formatTime(audioEl.currentTime);
+    }
+  });
+
+  audioEl.addEventListener('ended', () => {
+    audioPlayBtn.textContent = '▶';
+    audioPlayBtn.style.background = 'linear-gradient(135deg, #8b5cf6, #6366f1)';
+  });
+
+  function seekAudio(e) {
+    const scrubber = document.getElementById('audioScrubber');
+    const rect = scrubber.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    if (audioEl.duration) {
+      audioEl.currentTime = pos * audioEl.duration;
+    }
+  }
+
+  // ── Motion & Resolution Controls ──────────────────────────────────────────
+  function setMotionMode(mode) {
+    selectedMotionMode = mode;
+    document.getElementById('motionBtnKenBurns').classList.toggle('active', mode === 'ken-burns');
+    document.getElementById('motionBtnStatic').classList.toggle('active', mode === 'static');
+    
+    const fxSection = document.getElementById('effectsSection');
+    if (mode === 'static') {
+      fxSection.style.opacity = '0.4';
+      fxSection.style.pointerEvents = 'none';
+    } else {
+      fxSection.style.opacity = '1';
+      fxSection.style.pointerEvents = 'auto';
+    }
+  }
+
   function setResolution(res) {
     selectedResolution = res;
     document.querySelectorAll('.res-btn').forEach(btn => {
@@ -1207,10 +2326,7 @@
     const effect = btn.dataset.effect;
     if (activeEffects.has(effect)) {
       if (activeEffects.size <= 1) {
-        // Can't deselect the last chip — nudge it instead
-        btn.classList.remove('nudge');
-        void btn.offsetWidth; // reflow
-        btn.classList.add('nudge');
+        showToast('At least 1 motion effect must remain active', 'info');
         return;
       }
       activeEffects.delete(effect);
@@ -1224,7 +2340,6 @@
 
   function toggleAllEffects() {
     if (activeEffects.size === ALL_EFFECT_LABELS.length) {
-      // Deselect all except the first
       activeEffects = new Set([ALL_EFFECT_LABELS[0]]);
       document.querySelectorAll('.effect-chip').forEach((btn, i) =>
         btn.classList.toggle('active', i === 0));
@@ -1239,22 +2354,22 @@
     const btn = document.getElementById('allEffectsBtn');
     if (!btn) return;
     const allOn = activeEffects.size === ALL_EFFECT_LABELS.length;
-    btn.textContent = allOn ? 'All \u2713' : `${activeEffects.size}/${ALL_EFFECT_LABELS.length}`;
-    btn.classList.toggle('all-on', allOn);
+    btn.textContent = allOn ? 'All ✓' : `${activeEffects.size}/${ALL_EFFECT_LABELS.length}`;
   }
 
-  // ── Auto-Transcribe with Whisper ──────────────────────────────────────
+  // ── Auto-Transcribe with Whisper AI ───────────────────────────────────────
   async function startTranscription(e) {
-    if (e) e.stopPropagation(); // prevent SRT file picker from opening
+    if (e) e.stopPropagation();
     if (isTranscribing) return;
     isTranscribing = true;
 
     const btn = document.getElementById('transcribeBtn');
     btn.disabled = true;
     btn.classList.add('running');
-    btn.textContent = '\u23f3 Transcribing...';
+    btn.textContent = '⏳ Transcribing...';
     setStatus('busy', 'Transcribing...');
     appendLog('🎤 Whisper transcription started (model: base)...', 'start');
+    showToast('Whisper AI transcription started', 'info');
 
     try {
       const res = await fetch('/api/transcribe', { method: 'POST' });
@@ -1277,32 +2392,36 @@
             if (evt.type === 'log' && evt.message) appendLog(evt.message, 'info');
             if (evt.type === 'done') {
               setSrtUI('subtitles.srt', evt.size, evt.entries);
-              appendLog(`\u2705 ${evt.entries ?? 0} captions generated!`, 'done');
+              appendLog(`✅ ${evt.entries ?? 0} captions generated!`, 'done');
+              showToast(`Transcribed ${evt.entries ?? 0} captions successfully!`, 'success');
             }
             if (evt.type === 'error') appendLog(evt.message, 'error');
           } catch {}
         }
       }
     } catch (err) {
-      appendLog('\u274c Transcription failed: ' + err.message, 'error');
+      appendLog('❌ Transcription failed: ' + err.message, 'error');
+      showToast(`Transcription error: ${err.message}`, 'error');
     } finally {
       isTranscribing = false;
       setStatus('ready', 'Ready');
       btn.disabled = false;
       btn.classList.remove('running');
-      btn.textContent = '\ud83c\udfa4 Transcribe';
+      btn.textContent = '🎤 Transcribe';
     }
   }
 
-  // ── Show video ────────────────────────────────────────────────────────────
+  // ── Show Video & Player Tracking ──────────────────────────────────────────
+  const videoPlayer = document.getElementById('videoPlayer');
+  const videoTimecode = document.getElementById('videoTimecode');
+
   function showVideo(meta) {
-    const player = document.getElementById('videoPlayer');
     const empty  = document.getElementById('videoEmpty');
     const footer = document.getElementById('videoFooter');
     const metaText = document.getElementById('videoMetaText');
 
-    player.src = '/output.mp4?t=' + Date.now();
-    player.classList.add('loaded');
+    videoPlayer.src = '/output.mp4?t=' + Date.now();
+    videoPlayer.classList.add('loaded');
     empty.style.display = 'none';
     footer.style.display = 'flex';
 
@@ -1313,11 +2432,42 @@
     metaText.textContent = txt;
   }
 
+  function reloadVideo() {
+    showVideo({ size: null, mtime: new Date() });
+    showToast('Video output reloaded', 'info');
+  }
+
+  videoPlayer.addEventListener('timeupdate', () => {
+    if (videoPlayer.duration) {
+      videoTimecode.textContent = `${formatTime(videoPlayer.currentTime)} / ${formatTime(videoPlayer.duration)}`;
+      syncActiveTimelineClip(videoPlayer.currentTime);
+    }
+  });
+
+  function syncActiveTimelineClip(currentSec) {
+    if (!allImages.length) return;
+    let activeClip = allImages[0];
+    for (let i = 0; i < allImages.length; i++) {
+      if (allImages[i].timestamp.total <= currentSec) {
+        activeClip = allImages[i];
+      } else {
+        break;
+      }
+    }
+    document.querySelectorAll('.image-item').forEach(item => item.classList.remove('active'));
+    const el = document.getElementById(`img-item-${activeClip.timestamp.total}`);
+    if (el) {
+      el.classList.add('active');
+    }
+  }
+
   // ── Generate Video ────────────────────────────────────────────────────────
   function startGeneration() {
+    if (isGeneratingVideo) return;
+    isGeneratingVideo = true;
+
     // Reset UI
-    const log = document.getElementById('logOutput');
-    log.innerHTML = '';
+    clearLogs();
     setProgress(0);
     setGeneratingState(true);
 
@@ -1326,13 +2476,15 @@
       '1080p': '1080p Full HD',
       '2k': '2K QHD',
     };
-    setStatus('busy', `Rendering ${modeLabels[selectedResolution] || selectedResolution}...`);
+    setStatus('busy', `Rendering ${modeLabels[selectedResolution]}...`);
+    showToast(`Started rendering ${modeLabels[selectedResolution]}...`, 'info');
 
     abortCtrl = new AbortController();
 
     const query = new URLSearchParams({ res: selectedResolution });
-    // Only pass effects if not all are selected (server defaults to all)
-    if (activeEffects.size < ALL_EFFECT_LABELS.length) {
+    if (selectedMotionMode === 'static') {
+      query.set('motion', 'static');
+    } else if (activeEffects.size < ALL_EFFECT_LABELS.length) {
       query.set('effects', [...activeEffects].join(','));
     }
 
@@ -1341,9 +2493,9 @@
       signal: abortCtrl.signal,
     }).then(async res => {
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         appendLog(err.error || 'Failed to start render', 'error');
-        resetControls();
+        resetControls(false);
         return;
       }
 
@@ -1357,7 +2509,7 @@
         buf += decoder.decode(value, { stream: true });
 
         const lines = buf.split('\n');
-        buf = lines.pop(); // keep last chunk
+        buf = lines.pop();
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -1368,12 +2520,16 @@
           }
         }
       }
-      resetControls();
+      isGeneratingVideo = false;
+      setGeneratingState(false);
     }).catch(e => {
       if (e.name !== 'AbortError') {
         appendLog('Connection error: ' + e.message, 'error');
+        setStatus('error', 'Error');
+        showToast('Render error: ' + e.message, 'error');
       }
-      resetControls();
+      isGeneratingVideo = false;
+      setGeneratingState(false);
     });
   }
 
@@ -1394,27 +2550,29 @@
         setStatus('ready', 'Ready');
         setGeneratingState(false);
         showVideo({ size: evt.outputSize, mtime: new Date() });
-        const player = document.getElementById('videoPlayer');
-        if (player) player.play().catch(() => {});
+        showToast('Video rendering complete!', 'success');
+        if (videoPlayer) videoPlayer.play().catch(() => {});
         break;
       case 'error':
         appendLog(evt.message, 'error');
         setStatus('error', 'Error');
         setGeneratingState(false);
+        showToast('Render failed: ' + evt.message, 'error');
         break;
     }
   }
 
-  // ── SRT Upload ────────────────────────────────────────────────────────────
+  // ── SRT Upload & Clear ────────────────────────────────────────────────────
   function triggerSrtPicker(e) {
-    // Don't re-open picker if the clear button was clicked
-    if (e.target.id === 'srtClear' || e.target.closest('#srtClear')) return;
+    if (e.target.id === 'srtClear' || e.target.closest('#srtClear') ||
+        e.target.id === 'srtEditBtn' || e.target.closest('#srtEditBtn') ||
+        e.target.id === 'transcribeBtn' || e.target.closest('#transcribeBtn')) return;
     document.getElementById('srtFileInput').click();
   }
 
   function handleSrtFileInput(input) {
     if (input.files && input.files[0]) uploadSrt(input.files[0]);
-    input.value = ''; // reset so same file can be re-selected
+    input.value = '';
   }
 
   function onSrtDragOver(e) {
@@ -1435,7 +2593,7 @@
 
   async function uploadSrt(file) {
     if (!file.name.toLowerCase().endsWith('.srt')) {
-      appendLog('⚠️ Please upload a valid .srt file.', 'error');
+      showToast('Please upload a valid .srt file', 'error');
       return;
     }
     setSrtUI(file.name, file.size, 'uploading');
@@ -1446,10 +2604,11 @@
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Upload failed');
       setSrtUI(file.name, file.size, data.entries);
-      appendLog(`💬 Subtitle file loaded — ${data.entries} caption entr${data.entries === 1 ? 'y' : 'ies'} ready.`, 'start');
+      appendLog(`💬 Subtitle file loaded — ${data.entries} caption cues ready.`, 'start');
+      showToast(`Uploaded ${file.name} (${data.entries} cues)`, 'success');
     } catch (e) {
       setSrtUI(null);
-      appendLog('❌ Subtitle upload failed: ' + e.message, 'error');
+      showToast('Subtitle upload failed: ' + e.message, 'error');
     }
   }
 
@@ -1460,6 +2619,7 @@
     } catch {}
     setSrtUI(null);
     appendLog('🗑️ Subtitle file removed.', 'info');
+    showToast('Subtitles removed', 'info');
   }
 
   function setSrtUI(name, size, entries) {
@@ -1469,36 +2629,530 @@
     const metaEl = document.getElementById('srtMeta');
 
     if (!name) {
-      // No subtitle state
-      hasSrtFile = false;
       card.classList.remove('has-file');
       icon.textContent = '💬';
       nameEl.textContent = 'Add Subtitles';
       metaEl.textContent = 'Drop or click to upload .srt file';
     } else if (entries === 'uploading') {
-      // Uploading state
       nameEl.textContent = name;
       metaEl.textContent = 'Uploading...';
     } else {
-      // Loaded state
-      hasSrtFile = true;
       card.classList.add('has-file');
       icon.textContent = '✅';
       nameEl.textContent = name;
       const sizeStr = size ? (size / 1024).toFixed(1) + ' KB' : '';
-      const entryStr = entries != null ? ` · ${entries} caption${entries === 1 ? '' : 's'}` : '';
+      const entryStr = entries != null ? ` · ${entries} cue${entries === 1 ? '' : 's'}` : '';
       metaEl.textContent = sizeStr + entryStr;
     }
   }
 
-  // ── Cancel ────────────────────────────────────────────────────────────────
+  // ── Subtitle Inspector / Editor Modal ─────────────────────────────────────
+  async function openSubtitleModal(e) {
+    if (e) e.stopPropagation();
+    try {
+      const res = await fetch('/api/subtitles');
+      const data = await res.json();
+      loadedSubtitleCues = data.entries || [];
+      document.getElementById('subtitleCuesCount').textContent = `${loadedSubtitleCues.length} caption cues`;
+      renderSubtitleCuesList(loadedSubtitleCues);
+      document.getElementById('subtitleModal').classList.add('open');
+    } catch (err) {
+      showToast('Error loading subtitles: ' + err.message, 'error');
+    }
+  }
+
+  function closeSubtitleModal() {
+    document.getElementById('subtitleModal').classList.remove('open');
+  }
+
+  function renderSubtitleCuesList(cues) {
+    const container = document.getElementById('subtitleCuesList');
+    if (!cues.length) {
+      container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted)">No subtitles available</div>';
+      return;
+    }
+    container.innerHTML = cues.map((cue, i) => `
+      <div class="srt-cue-item">
+        <div class="srt-cue-id">#${cue.id || i + 1}</div>
+        <div class="srt-cue-content">
+          <div class="srt-cue-time">${cue.start} ➔ ${cue.end}</div>
+          <textarea class="srt-cue-input" id="cue-text-${i}" rows="2">${escapeHtml(cue.text)}</textarea>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function saveSubtitleEdits() {
+    if (!loadedSubtitleCues.length) return;
+    // Build SRT text
+    let srtText = '';
+    loadedSubtitleCues.forEach((cue, i) => {
+      const textVal = document.getElementById(`cue-text-${i}`)?.value || cue.text;
+      srtText += `${i + 1}\n${cue.start} --> ${cue.end}\n${textVal.trim()}\n\n`;
+    });
+
+    try {
+      const res = await fetch('/api/subtitles', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: srtText })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save subtitles');
+      setSrtUI('subtitles.srt', data.size, data.entries);
+      showToast('Subtitles updated successfully!', 'success');
+      closeSubtitleModal();
+    } catch (err) {
+      showToast('Error saving subtitles: ' + err.message, 'error');
+    }
+  }
+
+  // ── Subtitle Typography & Style Studio ────────────────────────────────────
+  let currentSubSettings = {
+    fontName: 'Inter',
+    fontSize: 42,
+    bold: false,
+    italic: false,
+    uppercase: false,
+    primaryColor: '#ffffff',
+    outlineColor: '#000000',
+    outlineWidth: 2.5,
+    shadowDepth: 1.0,
+    backColor: '#000000',
+    backAlpha: '99',
+    borderStyle: '1',
+    alignment: 2,
+    marginV: 40,
+    fadeInMs: 200,
+  };
+
+  const SUB_PRESETS = {
+    classic: {
+      fontName: 'Inter',
+      fontSize: 42,
+      bold: false,
+      italic: false,
+      uppercase: false,
+      primaryColor: '#ffffff',
+      outlineColor: '#000000',
+      outlineWidth: 2.5,
+      borderStyle: '1',
+      alignment: 2,
+      marginV: 40,
+      fadeInMs: 200,
+    },
+    viral: {
+      fontName: 'Impact',
+      fontSize: 54,
+      bold: true,
+      italic: false,
+      uppercase: true,
+      primaryColor: '#ffd700',
+      outlineColor: '#000000',
+      outlineWidth: 4.0,
+      borderStyle: '1',
+      alignment: 2,
+      marginV: 50,
+      fadeInMs: 0,
+    },
+    netflix: {
+      fontName: 'Roboto',
+      fontSize: 40,
+      bold: false,
+      italic: false,
+      uppercase: false,
+      primaryColor: '#ffffff',
+      outlineColor: '#000000',
+      outlineWidth: 0,
+      borderStyle: '3',
+      backColor: '#000000',
+      backAlpha: '99',
+      alignment: 2,
+      marginV: 40,
+      fadeInMs: 200,
+    },
+    cyberpunk: {
+      fontName: 'JetBrains Mono',
+      fontSize: 44,
+      bold: true,
+      italic: false,
+      uppercase: true,
+      primaryColor: '#00f0ff',
+      outlineColor: '#000000',
+      outlineWidth: 3.0,
+      borderStyle: '1',
+      alignment: 2,
+      marginV: 40,
+      fadeInMs: 150,
+    },
+    warm: {
+      fontName: 'Montserrat',
+      fontSize: 44,
+      bold: true,
+      italic: false,
+      uppercase: false,
+      primaryColor: '#ff8c00',
+      outlineColor: '#000000',
+      outlineWidth: 2.5,
+      borderStyle: '1',
+      alignment: 2,
+      marginV: 40,
+      fadeInMs: 200,
+    },
+    minimal: {
+      fontName: 'Montserrat',
+      fontSize: 38,
+      bold: false,
+      italic: true,
+      uppercase: false,
+      primaryColor: '#ffffff',
+      outlineColor: '#000000',
+      outlineWidth: 1.0,
+      borderStyle: '1-clean',
+      alignment: 2,
+      marginV: 40,
+      fadeInMs: 200,
+    }
+  };
+
+  async function loadSubtitleSettingsFromServer() {
+    try {
+      const res = await fetch('/api/subtitle-settings');
+      if (res.ok) {
+        const data = await res.json();
+        currentSubSettings = { ...currentSubSettings, ...data };
+        syncSubtitleFormInputs();
+      }
+    } catch {}
+  }
+
+  function openSubtitleStyleModal(e) {
+    if (e) e.stopPropagation();
+    syncSubtitleFormInputs();
+    updateSubtitleLivePreview();
+    document.getElementById('subtitleStyleModal').classList.add('open');
+  }
+
+  function closeSubtitleStyleModal(e) {
+    if (e && e.target && e.target.id !== 'subtitleStyleModal' && !e.target.classList.contains('modal-close') && e.target.tagName !== 'BUTTON') return;
+    document.getElementById('subtitleStyleModal').classList.remove('open');
+  }
+
+  function syncSubtitleFormInputs() {
+    const s = currentSubSettings;
+    const fontEl = document.getElementById('subFontFamily');
+    if (fontEl) fontEl.value = s.fontName || 'Inter';
+
+    const sizeEl = document.getElementById('subFontSize');
+    if (sizeEl) sizeEl.value = s.fontSize || 42;
+    const sizeVal = document.getElementById('subFontSizeVal');
+    if (sizeVal) sizeVal.textContent = (s.fontSize || 42) + 'px';
+
+    const boldBtn = document.getElementById('subBoldBtn');
+    if (boldBtn) boldBtn.classList.toggle('active', !!s.bold);
+
+    const italicBtn = document.getElementById('subItalicBtn');
+    if (italicBtn) italicBtn.classList.toggle('active', !!s.italic);
+
+    const upperBtn = document.getElementById('subUpperBtn');
+    if (upperBtn) upperBtn.classList.toggle('active', !!s.uppercase);
+
+    const priCol = document.getElementById('subPrimaryColor');
+    if (priCol) priCol.value = s.primaryColor || '#ffffff';
+
+    const outCol = document.getElementById('subOutlineColor');
+    if (outCol) outCol.value = s.outlineColor || '#000000';
+
+    const outW = document.getElementById('subOutlineWidth');
+    if (outW) outW.value = s.outlineWidth ?? 2.5;
+    const outVal = document.getElementById('subOutlineVal');
+    if (outVal) outVal.textContent = (s.outlineWidth ?? 2.5) + 'px';
+
+    const borderEl = document.getElementById('subBorderStyle');
+    if (borderEl) {
+      if (s.borderStyle === 3 && s.backAlpha === '00') {
+        borderEl.value = '3-opaque';
+      } else if (s.borderStyle === 1 && (s.outlineWidth === 0 || s.outlineWidth === '0')) {
+        borderEl.value = '1-clean';
+      } else {
+        borderEl.value = String(s.borderStyle || 1);
+      }
+    }
+
+    setSubAlign(s.alignment || 2, false);
+
+    const marV = document.getElementById('subMarginV');
+    if (marV) marV.value = s.marginV ?? 40;
+    const marVal = document.getElementById('subMarginVVal');
+    if (marVal) marVal.textContent = (s.marginV ?? 40) + 'px';
+
+    const fadeEl = document.getElementById('subFadeIn');
+    if (fadeEl) fadeEl.checked = (s.fadeInMs ?? 200) > 0;
+
+    updateSubtitleLivePreview();
+  }
+
+  function onSubtitleSettingChange() {
+    const fontEl = document.getElementById('subFontFamily');
+    const sizeEl = document.getElementById('subFontSize');
+    const priCol = document.getElementById('subPrimaryColor');
+    const outCol = document.getElementById('subOutlineColor');
+    const outW = document.getElementById('subOutlineWidth');
+    const borderEl = document.getElementById('subBorderStyle');
+    const marV = document.getElementById('subMarginV');
+    const fadeEl = document.getElementById('subFadeIn');
+
+    if (fontEl) currentSubSettings.fontName = fontEl.value;
+    if (sizeEl) {
+      currentSubSettings.fontSize = parseInt(sizeEl.value, 10);
+      document.getElementById('subFontSizeVal').textContent = sizeEl.value + 'px';
+    }
+    if (priCol) currentSubSettings.primaryColor = priCol.value;
+    if (outCol) currentSubSettings.outlineColor = outCol.value;
+    if (outW) {
+      currentSubSettings.outlineWidth = parseFloat(outW.value);
+      document.getElementById('subOutlineVal').textContent = outW.value + 'px';
+    }
+    if (borderEl) {
+      const v = borderEl.value;
+      if (v === '3-opaque') {
+        currentSubSettings.borderStyle = 3;
+        currentSubSettings.backAlpha = '00';
+        currentSubSettings.backColor = '#000000';
+      } else if (v === '3') {
+        currentSubSettings.borderStyle = 3;
+        currentSubSettings.backAlpha = '99';
+        currentSubSettings.backColor = '#000000';
+      } else if (v === '1-clean') {
+        currentSubSettings.borderStyle = 1;
+        currentSubSettings.outlineWidth = 0;
+        document.getElementById('subOutlineWidth').value = 0;
+        document.getElementById('subOutlineVal').textContent = '0px';
+      } else {
+        currentSubSettings.borderStyle = 1;
+      }
+    }
+    if (marV) {
+      currentSubSettings.marginV = parseInt(marV.value, 10);
+      document.getElementById('subMarginVVal').textContent = marV.value + 'px';
+    }
+    if (fadeEl) {
+      currentSubSettings.fadeInMs = fadeEl.checked ? 200 : 0;
+    }
+
+    updateSubtitleLivePreview();
+  }
+
+  function toggleSubStyle(prop) {
+    currentSubSettings[prop] = !currentSubSettings[prop];
+    const btn = document.getElementById(prop === 'bold' ? 'subBoldBtn' : prop === 'italic' ? 'subItalicBtn' : 'subUpperBtn');
+    if (btn) btn.classList.toggle('active', !!currentSubSettings[prop]);
+    updateSubtitleLivePreview();
+  }
+
+  function setFontSize(px) {
+    currentSubSettings.fontSize = px;
+    const el = document.getElementById('subFontSize');
+    if (el) el.value = px;
+    const val = document.getElementById('subFontSizeVal');
+    if (val) val.textContent = px + 'px';
+    updateSubtitleLivePreview();
+  }
+
+  function setPrimaryColor(hex) {
+    currentSubSettings.primaryColor = hex;
+    const el = document.getElementById('subPrimaryColor');
+    if (el) el.value = hex;
+    updateSubtitleLivePreview();
+  }
+
+  function setOutlineColor(hex) {
+    currentSubSettings.outlineColor = hex;
+    const el = document.getElementById('subOutlineColor');
+    if (el) el.value = hex;
+    updateSubtitleLivePreview();
+  }
+
+  function setSubAlign(val, updateState = true) {
+    if (updateState) currentSubSettings.alignment = val;
+    [2, 8, 5].forEach(a => {
+      const btn = document.getElementById(`posBtn${a}`);
+      if (btn) btn.classList.toggle('active', a === val);
+    });
+    updateSubtitleLivePreview();
+  }
+
+  function applyPreset(key) {
+    const preset = SUB_PRESETS[key];
+    if (!preset) return;
+    currentSubSettings = { ...currentSubSettings, ...preset };
+    syncSubtitleFormInputs();
+    showToast(`Applied "${preset.fontName}" style preset`, 'info');
+  }
+
+  function resetSubtitleSettings() {
+    applyPreset('classic');
+    showToast('Reset subtitle styles to default', 'info');
+  }
+
+  function updateSubtitleLivePreview() {
+    const textEl = document.getElementById('subPreviewText');
+    const metaEl = document.getElementById('subPreviewMeta');
+    const stageEl = document.getElementById('subPreviewStage');
+    if (!textEl) return;
+
+    const s = currentSubSettings;
+    const font = s.fontName || 'Inter';
+    const size = s.fontSize || 42;
+    const bold = !!s.bold;
+    const italic = !!s.italic;
+    const upper = !!s.uppercase;
+    const priColor = s.primaryColor || '#ffffff';
+    const outColor = s.outlineColor || '#000000';
+    const outWidth = s.outlineWidth ?? 2.5;
+    const borderStyle = s.borderStyle || 1;
+
+    // Display Font mapping
+    let cssFontFamily = font;
+    if (font === 'Impact') cssFontFamily = "'Impact', 'Oswald', sans-serif";
+    else if (font === 'Inter') cssFontFamily = "'Inter', sans-serif";
+    else if (font === 'Montserrat') cssFontFamily = "'Montserrat', sans-serif";
+    else if (font === 'Roboto') cssFontFamily = "'Roboto', sans-serif";
+    else if (font === 'JetBrains Mono') cssFontFamily = "'JetBrains Mono', monospace";
+    else cssFontFamily = `${font}, sans-serif`;
+
+    textEl.style.fontFamily = cssFontFamily;
+    // Scale size smoothly for the preview box (approx 52% scale of 1080p canvas)
+    const previewFontSize = Math.min(32, Math.max(15, Math.round(size * 0.52)));
+    textEl.style.fontSize = `${previewFontSize}px`;
+    textEl.style.fontWeight = bold ? '800' : '500';
+    textEl.style.fontStyle = italic ? 'italic' : 'normal';
+    textEl.style.textTransform = upper ? 'uppercase' : 'none';
+    textEl.style.color = priColor;
+
+    if (borderStyle === 3 || s.borderStyle === '3-opaque' || s.borderStyle === '3') {
+      const isOpaque = s.backAlpha === '00' || s.borderStyle === '3-opaque';
+      textEl.style.background = isOpaque ? '#000000' : 'rgba(0, 0, 0, 0.65)';
+      textEl.style.textShadow = 'none';
+      textEl.style.border = '1px solid rgba(255,255,255,0.1)';
+    } else {
+      textEl.style.background = 'transparent';
+      textEl.style.border = 'none';
+      if (outWidth > 0) {
+        const o = Math.max(1, Math.round(outWidth * 0.7));
+        textEl.style.textShadow = `-${o}px -${o}px 0 ${outColor}, ${o}px -${o}px 0 ${outColor}, -${o}px ${o}px 0 ${outColor}, ${o}px ${o}px 0 ${outColor}, 0 2px 8px rgba(0,0,0,0.8)`;
+      } else {
+        textEl.style.textShadow = '0 2px 6px rgba(0,0,0,0.8)';
+      }
+    }
+
+    // Align stage positioning
+    if (stageEl) {
+      if (s.alignment === 5) stageEl.style.alignItems = 'flex-start';
+      else if (s.alignment === 8) stageEl.style.alignItems = 'center';
+      else stageEl.style.alignItems = 'flex-end';
+    }
+
+    if (metaEl) {
+      const alignName = s.alignment === 5 ? 'Top' : s.alignment === 8 ? 'Center' : 'Bottom';
+      metaEl.textContent = `Font: ${font} · ${size}px${bold ? ' · Bold' : ''}${italic ? ' · Italic' : ''}${upper ? ' · ALL CAPS' : ''} · ${alignName} (Margin: ${s.marginV || 40}px)`;
+    }
+  }
+
+  async function saveSubtitleSettings() {
+    try {
+      const res = await fetch('/api/subtitle-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentSubSettings),
+      });
+      if (!res.ok) throw new Error('Failed to save settings on server');
+      showToast('Subtitle styles saved & applied!', 'success');
+      closeSubtitleStyleModal();
+    } catch (e) {
+      showToast('Error saving settings: ' + e.message, 'error');
+    }
+  }
+
+  // ── Lightbox Image Modal ──────────────────────────────────────────────────
+  function openLightbox(encodedName, tsLabel, durationSec, e) {
+    if (e) e.stopPropagation();
+    const rawName = decodeURIComponent(encodedName);
+    activeLightboxImg = { name: rawName, tsLabel, durationSec };
+    document.getElementById('lightboxTitle').innerHTML = `<span>🖼</span> Clip: ${rawName.replace(/^\[\d+-\d+\]_?/, '')}`;
+    document.getElementById('lightboxImg').src = `/image/${encodedName}`;
+    document.getElementById('lightboxMeta').textContent = `Timestamp: ${tsLabel} · Duration: ${durationSec}s`;
+    document.getElementById('lightboxModal').classList.add('open');
+  }
+
+  function closeLightboxModal() {
+    document.getElementById('lightboxModal').classList.remove('open');
+  }
+
+  function jumpToCurrentLightboxClip() {
+    if (activeLightboxImg) {
+      const parts = activeLightboxImg.tsLabel.split(':').map(Number);
+      const sec = parts[0] * 60 + (parts[1] || 0);
+      seekToClip(sec);
+      closeLightboxModal();
+    }
+  }
+
+  // ── Keyboard Shortcuts Modal ──────────────────────────────────────────────
+  function openShortcutsModal() {
+    document.getElementById('shortcutsModal').classList.add('open');
+  }
+
+  function closeShortcutsModal() {
+    document.getElementById('shortcutsModal').classList.remove('open');
+  }
+
+  // Global Keyboard Shortcuts
+  window.addEventListener('keydown', (e) => {
+    // Ignore when inside input / textarea
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+      if (e.key === 'Escape') document.activeElement.blur();
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      closeSubtitleStyleModal();
+      closeSubtitleModal();
+      closeLightboxModal();
+      closeShortcutsModal();
+    } else if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      if (videoPlayer.classList.contains('loaded')) {
+        videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause();
+      }
+    } else if (e.key === 'j' || e.key === 'J') {
+      if (videoPlayer.classList.contains('loaded')) videoPlayer.currentTime = Math.max(0, videoPlayer.currentTime - 5);
+    } else if (e.key === 'l' || e.key === 'L') {
+      if (videoPlayer.classList.contains('loaded')) videoPlayer.currentTime = Math.min(videoPlayer.duration, videoPlayer.currentTime + 5);
+    } else if (e.key === 'm' || e.key === 'M') {
+      videoPlayer.muted = !videoPlayer.muted;
+      showToast(videoPlayer.muted ? 'Muted' : 'Unmuted', 'info');
+    } else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) {
+        videoPlayer.requestFullscreen?.().catch(() => {});
+      } else {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    } else if (e.ctrlKey && e.key === 'Enter') {
+      e.preventDefault();
+      startGeneration();
+    }
+  });
+
+  // ── Cancel Generation ─────────────────────────────────────────────────────
   async function cancelGeneration() {
     if (abortCtrl) abortCtrl.abort();
     try {
       await fetch('/api/cancel', { method: 'POST' });
     } catch {}
     appendLog('⚠️ Render cancelled by user.', 'error');
-    resetControls();
+    showToast('Render cancelled', 'info');
+    resetControls(false);
   }
 
   function setGeneratingState(generating) {
@@ -1522,12 +3176,13 @@
     }
   }
 
-  function resetControls() {
+  function resetControls(setReadyStatus = true) {
+    isGeneratingVideo = false;
     setGeneratingState(false);
-    setStatus('ready', 'Ready');
+    if (setReadyStatus) setStatus('ready', 'Ready');
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ── Console & Helpers ─────────────────────────────────────────────────────
   function setStatus(type, text) {
     const dot  = document.getElementById('statusDot');
     const span = document.getElementById('statusText');
@@ -1543,17 +3198,49 @@
   function appendLog(msg, type = 'info') {
     if (!msg) return;
     const log = document.getElementById('logOutput');
+    // Remove placeholder
+    const placeholder = log.querySelector('.log-placeholder');
+    if (placeholder) placeholder.remove();
+
     const line = document.createElement('div');
     line.className = 'log-line ' + type;
     line.textContent = msg;
     log.appendChild(line);
-    log.scrollTop = log.scrollHeight;
+
+    if (document.getElementById('autoScrollCheck').checked) {
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+
+  function clearLogs() {
+    const log = document.getElementById('logOutput');
+    log.innerHTML = '<div class="log-placeholder">Click "Generate Video" to begin rendering the timeline</div>';
+  }
+
+  function copyLogs() {
+    const log = document.getElementById('logOutput');
+    const text = log.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Logs copied to clipboard', 'success');
+    });
+  }
+
+  function formatTime(seconds) {
+    if (isNaN(seconds) || seconds == null) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
   }
 
   function formatBytes(bytes) {
     if (!bytes) return '—';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   init();

@@ -138,10 +138,61 @@ function simpleHash(str) {
 }
 
 // ── SRT → ASS Subtitle Converter ─────────────────────────────────────────────
-// Parses an SRT file and emits a properly-styled ASS file with a 200ms
-// fade-in on every cue (line-by-line, clean appearance).
+// Parses an SRT file and emits a properly-styled ASS file with customizable
+// fonts, sizes, colors, strokes, shadow boxes, uppercase transform, and transitions.
 // Using the `ass` FFmpeg filter avoids the Windows drive-letter path
 // parsing bug that plagued the `subtitles` filter's option handling.
+
+const SUBTITLE_SETTINGS_PATH = resolve(__dirname, 'subtitles/settings.json');
+
+const DEFAULT_SUB_SETTINGS = {
+  fontName: 'Inter',
+  fontSize: 42,
+  bold: false,
+  italic: false,
+  uppercase: false,
+  primaryColor: '#FFFFFF',
+  outlineColor: '#000000',
+  outlineWidth: 2.5,
+  shadowDepth: 1.0,
+  backColor: '#000000',
+  backAlpha: '99',
+  borderStyle: 1, // 1 = Outline + Drop shadow, 3 = Opaque Box Banner
+  alignment: 2,   // 2 = Bottom-Center, 8 = Mid-Center, 5 = Top-Center
+  marginV: 40,
+  fadeInMs: 200,
+};
+
+function hexToAssColor(hex, alphaHex = '00') {
+  if (!hex) return `&H${alphaHex}000000`;
+  let clean = hex.replace('#', '').trim();
+  if (clean.length === 3) {
+    clean = clean.split('').map(c => c + c).join('');
+  }
+  if (clean.length === 8) {
+    const r = clean.slice(0, 2);
+    const g = clean.slice(2, 4);
+    const b = clean.slice(4, 6);
+    const a = clean.slice(6, 8);
+    return `&H${a.toUpperCase()}${b.toUpperCase()}${g.toUpperCase()}${r.toUpperCase()}`;
+  }
+  const r = clean.slice(0, 2);
+  const g = clean.slice(2, 4);
+  const b = clean.slice(4, 6);
+  return `&H${alphaHex.toUpperCase()}${b.toUpperCase()}${g.toUpperCase()}${r.toUpperCase()}`;
+}
+
+function loadSubtitleSettings() {
+  if (existsSync(SUBTITLE_SETTINGS_PATH)) {
+    try {
+      const raw = JSON.parse(readFileSync(SUBTITLE_SETTINGS_PATH, 'utf-8'));
+      return { ...DEFAULT_SUB_SETTINGS, ...raw };
+    } catch (e) {
+      console.warn('⚠️ Could not parse subtitle settings, using defaults:', e.message);
+    }
+  }
+  return { ...DEFAULT_SUB_SETTINGS };
+}
 
 function parseSrtToEntries(content) {
   const entries = [];
@@ -172,7 +223,24 @@ function secToAssTime(sec) {
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '00')}`;
 }
 
-function buildAssFile(entries, width, height, fontSize) {
+function buildAssFile(entries, width, height, subSettings = {}, resScale = 1.0) {
+  const cfg = { ...DEFAULT_SUB_SETTINGS, ...subSettings };
+
+  const scaledFontSize = Math.max(14, Math.round((cfg.fontSize || 42) * resScale));
+  const scaledMarginV  = Math.max(10, Math.round((cfg.marginV ?? 40) * resScale));
+  const scaledOutline  = Math.max(0, (cfg.outlineWidth ?? 2.5) * resScale).toFixed(1);
+  const scaledShadow   = Math.max(0, (cfg.shadowDepth ?? 1.0) * resScale).toFixed(1);
+
+  const primaryAss = hexToAssColor(cfg.primaryColor, '00');
+  const outlineAss = hexToAssColor(cfg.outlineColor, '00');
+  const backAss    = hexToAssColor(cfg.backColor || '#000000', cfg.backAlpha || '99');
+
+  const boldVal     = cfg.bold ? -1 : 0;
+  const italicVal   = cfg.italic ? -1 : 0;
+  const borderStyle = cfg.borderStyle || 1;
+  const alignment   = cfg.alignment || 2;
+  const fontName    = cfg.fontName || 'Inter';
+
   const header = [
     '[Script Info]',
     'ScriptType: v4.00+',
@@ -183,18 +251,21 @@ function buildAssFile(entries, width, height, fontSize) {
     '',
     '[V4+ Styles]',
     'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
-    // White text, 2.5px black outline, semi-transparent box, centred-bottom (Alignment=2)
-    `Style: Default,Inter,${fontSize},&H00FFFFFF,&H000000FF,&H00000000,&H99000000,0,0,0,0,100,100,0,0,1,2.5,1,2,30,30,40,1`,
+    `Style: Default,${fontName},${scaledFontSize},${primaryAss},&H000000FF,${outlineAss},${backAss},${boldVal},${italicVal},0,0,100,100,0,0,${borderStyle},${scaledOutline},${scaledShadow},${alignment},30,30,${scaledMarginV},1`,
     '',
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
   ].join('\n');
 
+  const fadeInMs = cfg.fadeInMs ?? 200;
+  const fadTag = fadeInMs > 0 ? `{\\fad(${fadeInMs},0)}` : '';
+
   const dialogues = entries.map(e => {
-    // Strip HTML tags from SRT; convert SRT newlines to ASS \N
-    const clean = e.text.replace(/<[^>]+>/g, '').replace(/\n/g, '\\N');
-    // \fad(fadeInMs, fadeOutMs) — 200ms fade-in, instant cut at end
-    return `Dialogue: 0,${secToAssTime(e.start)},${secToAssTime(e.end)},Default,,0,0,0,,{\\fad(200,0)}${clean}`;
+    let clean = e.text.replace(/<[^>]+>/g, '').replace(/\n/g, '\\N');
+    if (cfg.uppercase) {
+      clean = clean.toUpperCase();
+    }
+    return `Dialogue: 0,${secToAssTime(e.start)},${secToAssTime(e.end)},Default,,0,0,0,,${fadTag}${clean}`;
   });
 
   return header + '\n' + dialogues.join('\n') + '\n';
@@ -265,8 +336,9 @@ const scaleExpr = buildTree(clips, (c) => zoomScaleExpr(c));
 const panXExpr  = buildTree(clips, (c) => panExpr(c, 'x'));
 const panYExpr  = buildTree(clips, (c) => panExpr(c, 'y'));
 
-const overlayX = `-(${headX}+(${panXExpr})+((${scaleExpr})-1)*${bigW}/2)`;
-const overlayY = `-(${headY}+(${panYExpr})+((${scaleExpr})-1)*${bigH}/2)`;
+// Rock-solid smooth centering: references actual overlay frame dimensions (W-w)/2 and (H-h)/2
+const overlayX = `(W-w)/2-(${panXExpr})`;
+const overlayY = `(H-h)/2-(${panYExpr})`;
 
 // ── 5. Render via FFmpeg with Smooth Digital Pans & Zooms ─────────────────
 const bgW = Math.max(160, Math.round(outWidth / 4));
@@ -279,25 +351,25 @@ if (isStatic) {
     `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];` +
     `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,format=yuv420p[v]`;
 } else {
+  // Use trunc((...)/2)*2 so width & height are always even integers on every frame,
+  // preventing subpixel phase jitter and shaking during zoom in and zoom out.
   videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
     `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
-    `[fg]scale=${bigW}:${bigH}:force_original_aspect_ratio=increase,crop=${bigW}:${bigH},scale='${bigW}*(${scaleExpr})':'${bigH}*(${scaleExpr})':eval=frame:flags=bicubic[bigzoom];` +
+    `[fg]scale=${bigW}:${bigH}:force_original_aspect_ratio=increase,crop=${bigW}:${bigH},scale='trunc((${bigW}*(${scaleExpr}))/2)*2':'trunc((${bigH}*(${scaleExpr}))/2)*2':eval=frame:flags=bicubic[bigzoom];` +
     `[bgblur][bigzoom]overlay='${overlayX}':'${overlayY}':eval=frame,format=yuv420p[v]`;
 }
 
 // Chain subtitle filter when an SRT file is present
 const outLabel = hasSubs ? 'vout' : 'v';
 if (hasSubs) {
-  // Convert SRT → ASS with per-cue 200ms fade-in, then use the `ass` filter.
-  // This avoids the Windows drive-letter `:` option-separator bug entirely
-  // and gives us clean line-by-line subtitle rendering via libass.
   const srtContent = readFileSync(SUBTITLE_PATH, 'utf-8');
   const entries = parseSrtToEntries(srtContent);
-  const fontSize = is2K ? 52 : isFast ? 32 : 42;
-  writeFileSync(ASS_PATH, buildAssFile(entries, outWidth, outHeight, fontSize), 'utf-8');
-  console.log(`💬 Generated ASS subtitles: ${entries.length} cues with 200ms fade-in`);
+  const subSettings = loadSubtitleSettings();
+  const resScale = outWidth / 1920;
+  writeFileSync(ASS_PATH, buildAssFile(entries, outWidth, outHeight, subSettings, resScale), 'utf-8');
+  console.log(`💬 Generated ASS subtitles: ${entries.length} cues using font '${subSettings.fontName || 'Inter'}' (${subSettings.fontSize || 42}px${subSettings.bold ? ', Bold' : ''}${subSettings.uppercase ? ', ALL CAPS' : ''})`);
 
-  // Same Windows drive-letter colon escape applies to the ass filter
+  // Windows drive-letter colon escape applies to the ass filter
   const assForFFmpeg = ASS_PATH
     .replace(/\\/g, '/')
     .replace(/^([A-Za-z]):/, '$1\\:');
