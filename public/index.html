@@ -806,7 +806,123 @@
     .srt-clear:hover { background: rgba(239, 68, 68, 0.3); }
     .srt-card.has-file .srt-clear { display: grid; }
 
+    .srt-card:not(.has-file) .srt-clear { display: none !important; }
+
     #srtFileInput { display: none; }
+
+    /* ── Transcribe Button ─────────────────────────────── */
+    .transcribe-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 11px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(14, 165, 233, 0.08);
+      color: #38bdf8;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .transcribe-btn:hover:not(:disabled) {
+      background: rgba(14, 165, 233, 0.2);
+      border-color: #38bdf8;
+    }
+    .transcribe-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .transcribe-btn.running {
+      color: var(--amber-light);
+      border-color: rgba(245, 158, 11, 0.5);
+      background: var(--amber-glow);
+      animation: pulse 1.2s infinite;
+    }
+    /* hide when SRT already loaded */
+    .srt-card.has-file .transcribe-btn { display: none; }
+
+    /* ── Effect Chips ────────────────────────────────── */
+    .effects-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 7px 14px;
+      min-width: 0;
+      flex: 1;
+    }
+    .effects-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .effects-chips {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      flex: 1;
+      scrollbar-width: none;
+      padding: 2px 0;
+    }
+    .effects-chips::-webkit-scrollbar { display: none; }
+    .effect-chip {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    .effect-chip:hover:not(.active) { border-color: var(--border-hi); color: var(--text); }
+    .effect-chip.active {
+      background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06));
+      border-color: rgba(245, 158, 11, 0.55);
+      color: var(--amber-light);
+    }
+    .effect-chip.nudge { animation: nudge 0.35s ease; }
+    @keyframes nudge {
+      0%,100% { transform: translateX(0); }
+      30% { transform: translateX(-4px); }
+      70% { transform: translateX(4px); }
+    }
+    .effects-all-btn {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .effects-all-btn.all-on {
+      color: var(--amber-light);
+      border-color: rgba(245, 158, 11, 0.45);
+    }
+    .effects-all-btn:hover { color: var(--amber-light); border-color: var(--amber); }
   </style>
 </head>
 <body>
@@ -878,6 +994,11 @@
         <button class="srt-clear" id="srtClear"
                 onclick="clearSrt(event)"
                 title="Remove subtitle file">✕</button>
+        <button class="transcribe-btn" id="transcribeBtn"
+                onclick="startTranscription(event)"
+                title="Auto-generate subtitles from audio using Whisper AI (base model)">
+          🎤 Transcribe
+        </button>
       </div>
 
       <!-- Resolution Selector -->
@@ -893,10 +1014,24 @@
         </button>
       </div>
 
-      <!-- Cinematic Motion Toggle -->
-      <div class="toggle-wrap active" id="motionToggle" onclick="toggleMotion()" title="Smooth Ken Burns dynamic pans and zoom-ins across each image">
-        <div class="toggle-switch"></div>
-        <span>🎬 Dynamic Pans & Zooms</span>
+      <!-- Effect Selection Chips -->
+      <div class="effects-section">
+        <span class="effects-label">🎥 Effects</span>
+        <div class="effects-chips" id="effectsChips">
+          <button class="effect-chip active" data-effect="zoom-in"   onclick="toggleEffect(this)">🔍 Zoom In</button>
+          <button class="effect-chip active" data-effect="zoom-out"  onclick="toggleEffect(this)">🔎 Zoom Out</button>
+          <button class="effect-chip active" data-effect="pan-left"  onclick="toggleEffect(this)">⬅ Pan Left</button>
+          <button class="effect-chip active" data-effect="pan-right" onclick="toggleEffect(this)">➡ Pan Right</button>
+          <button class="effect-chip active" data-effect="pan-up"    onclick="toggleEffect(this)">⬆ Pan Up</button>
+          <button class="effect-chip active" data-effect="pan-down"  onclick="toggleEffect(this)">⬇ Pan Down</button>
+          <button class="effect-chip active" data-effect="diag-tl"   onclick="toggleEffect(this)">↘ Diagonal</button>
+          <button class="effect-chip active" data-effect="diag-br"   onclick="toggleEffect(this)">↖ Diagonal</button>
+          <button class="effect-chip active" data-effect="push-in"   onclick="toggleEffect(this)">🎯 Push In</button>
+          <button class="effect-chip active" data-effect="pull-out"  onclick="toggleEffect(this)">🌅 Pull Out</button>
+        </div>
+        <button class="effects-all-btn all-on" id="allEffectsBtn"
+                onclick="toggleAllEffects()"
+                title="Toggle all effects on / off">All ✓</button>
       </div>
 
       <!-- Generate button -->
@@ -956,11 +1091,13 @@
 </div>
 
 <script>
-  let allImages = [];
+  const ALL_EFFECT_LABELS = ['zoom-in','zoom-out','pan-left','pan-right','pan-up','pan-down','diag-tl','diag-br','push-in','pull-out'];
+  let allImages        = [];
   let selectedResolution = '1080p';
-  let isMotionEnabled = true;
-  let abortCtrl = null;
-  let hasSrtFile = false;
+  let activeEffects    = new Set(ALL_EFFECT_LABELS);
+  let isTranscribing   = false;
+  let abortCtrl        = null;
+  let hasSrtFile       = false;
 
   // ── Init ──────────────────────────────────────────────────────────────────
   async function init() {
@@ -1066,9 +1203,95 @@
     });
   }
 
-  function toggleMotion() {
-    isMotionEnabled = !isMotionEnabled;
-    document.getElementById('motionToggle').classList.toggle('active', isMotionEnabled);
+  function toggleEffect(btn) {
+    const effect = btn.dataset.effect;
+    if (activeEffects.has(effect)) {
+      if (activeEffects.size <= 1) {
+        // Can't deselect the last chip — nudge it instead
+        btn.classList.remove('nudge');
+        void btn.offsetWidth; // reflow
+        btn.classList.add('nudge');
+        return;
+      }
+      activeEffects.delete(effect);
+      btn.classList.remove('active');
+    } else {
+      activeEffects.add(effect);
+      btn.classList.add('active');
+    }
+    syncAllEffectsBtn();
+  }
+
+  function toggleAllEffects() {
+    if (activeEffects.size === ALL_EFFECT_LABELS.length) {
+      // Deselect all except the first
+      activeEffects = new Set([ALL_EFFECT_LABELS[0]]);
+      document.querySelectorAll('.effect-chip').forEach((btn, i) =>
+        btn.classList.toggle('active', i === 0));
+    } else {
+      activeEffects = new Set(ALL_EFFECT_LABELS);
+      document.querySelectorAll('.effect-chip').forEach(btn => btn.classList.add('active'));
+    }
+    syncAllEffectsBtn();
+  }
+
+  function syncAllEffectsBtn() {
+    const btn = document.getElementById('allEffectsBtn');
+    if (!btn) return;
+    const allOn = activeEffects.size === ALL_EFFECT_LABELS.length;
+    btn.textContent = allOn ? 'All \u2713' : `${activeEffects.size}/${ALL_EFFECT_LABELS.length}`;
+    btn.classList.toggle('all-on', allOn);
+  }
+
+  // ── Auto-Transcribe with Whisper ──────────────────────────────────────
+  async function startTranscription(e) {
+    if (e) e.stopPropagation(); // prevent SRT file picker from opening
+    if (isTranscribing) return;
+    isTranscribing = true;
+
+    const btn = document.getElementById('transcribeBtn');
+    btn.disabled = true;
+    btn.classList.add('running');
+    btn.textContent = '\u23f3 Transcribing...';
+    setStatus('busy', 'Transcribing...');
+    appendLog('🎤 Whisper transcription started (model: base)...', 'start');
+
+    try {
+      const res = await fetch('/api/transcribe', { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Transcription request failed');
+      }
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n'); buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const evt = JSON.parse(line.slice(6));
+            if (evt.type === 'log' && evt.message) appendLog(evt.message, 'info');
+            if (evt.type === 'done') {
+              setSrtUI('subtitles.srt', evt.size, evt.entries);
+              appendLog(`\u2705 ${evt.entries ?? 0} captions generated!`, 'done');
+            }
+            if (evt.type === 'error') appendLog(evt.message, 'error');
+          } catch {}
+        }
+      }
+    } catch (err) {
+      appendLog('\u274c Transcription failed: ' + err.message, 'error');
+    } finally {
+      isTranscribing = false;
+      setStatus('ready', 'Ready');
+      btn.disabled = false;
+      btn.classList.remove('running');
+      btn.textContent = '\ud83c\udfa4 Transcribe';
+    }
   }
 
   // ── Show video ────────────────────────────────────────────────────────────
@@ -1107,10 +1330,11 @@
 
     abortCtrl = new AbortController();
 
-    const query = new URLSearchParams({
-      res: selectedResolution,
-      motion: isMotionEnabled,
-    });
+    const query = new URLSearchParams({ res: selectedResolution });
+    // Only pass effects if not all are selected (server defaults to all)
+    if (activeEffects.size < ALL_EFFECT_LABELS.length) {
+      query.set('effects', [...activeEffects].join(','));
+    }
 
     fetch(`/api/generate?${query.toString()}`, {
       method: 'POST',
@@ -1278,20 +1502,23 @@
   }
 
   function setGeneratingState(generating) {
-    const genBtn = document.getElementById('generateBtn');
+    const genBtn    = document.getElementById('generateBtn');
     const cancelBtn = document.getElementById('cancelBtn');
-    const label = document.getElementById('btnLabel');
+    const label     = document.getElementById('btnLabel');
+    const txBtn     = document.getElementById('transcribeBtn');
 
     if (generating) {
       genBtn.disabled = true;
       genBtn.classList.add('loading');
       label.textContent = 'Rendering...';
       cancelBtn.classList.add('visible');
+      if (txBtn) txBtn.disabled = true;
     } else {
       genBtn.disabled = false;
       genBtn.classList.remove('loading');
       label.textContent = 'Generate Video';
       cancelBtn.classList.remove('visible');
+      if (txBtn && !isTranscribing) txBtn.disabled = false;
     }
   }
 

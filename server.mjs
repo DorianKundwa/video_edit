@@ -177,7 +177,7 @@ const server = http.createServer((req, res) => {
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
     const resolution = url.searchParams.get('res') || (url.searchParams.get('fast') === 'true' ? '720p' : '1080p');
-    const motion = url.searchParams.get('motion') !== 'false';
+    const effectsParam = url.searchParams.get('effects') || '';
 
     const args = ['generate_video.mjs'];
     if (resolution === '720p' || url.searchParams.get('fast') === 'true') {
@@ -185,16 +185,16 @@ const server = http.createServer((req, res) => {
     } else if (resolution === '2k') {
       args.push('--2k');
     }
-
-    if (!motion) {
-      args.push('--static');
+    if (effectsParam) {
+      args.push(`--effects=${effectsParam}`);
     }
 
     const modeLabel = resolution === '2k' ? '2K QHD (1440p)' : resolution === '720p' ? '720p HD DRAFT' : '1080p FULL HD';
-    const motionLabel = motion ? 'Cinematic Motion (Pans & Zooms)' : 'Static Slides';
+    const effectCount = effectsParam ? effectsParam.split(',').length : 10;
+    const effectsLabel = effectsParam ? `${effectCount} effect${effectCount !== 1 ? 's' : ''}` : 'all 10 effects';
     send({
       type: 'start',
-      message: `🚀 Starting video generation in ${modeLabel} mode (${motionLabel}) via Native FFmpeg...`,
+      message: `🚀 Starting video generation in ${modeLabel} mode (${effectsLabel}) via Native FFmpeg...`,
     });
 
     activeProc = spawn('node', args, { cwd: __dirname });
@@ -302,6 +302,58 @@ const server = http.createServer((req, res) => {
     } catch (e) {
       return json(res, { error: e.message }, 500);
     }
+  }
+
+  // ── POST /api/transcribe ────────────────────────────────────────────────────
+  if (path_ === '/api/transcribe' && req.method === 'POST') {
+    if (isGenerating) return json(res, { error: 'A render or transcription is already running' }, 409);
+
+    isGenerating = true;
+
+    res.writeHead(200, {
+      'Content-Type':  'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection':    'keep-alive',
+    });
+
+    const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+    send({ type: 'start', message: '🎤️ Whisper transcription started (model: base)...' });
+
+    activeProc = spawn('node', ['transcribe.mjs'], { cwd: __dirname });
+
+    let tbuf = '';
+    const handleTChunk = (chunk) => {
+      tbuf += chunk.toString();
+      const lines = tbuf.split('\n');
+      tbuf = lines.pop();
+      for (const line of lines) {
+        if (line.trim()) send({ type: 'log', message: line.trim() });
+      }
+    };
+
+    activeProc.stdout.on('data', handleTChunk);
+    activeProc.stderr.on('data', handleTChunk);
+
+    activeProc.on('close', (code) => {
+      isGenerating = false;
+      activeProc   = null;
+      if (code === 0) {
+        const srtExists = fs.existsSync(SUBTITLE_PATH);
+        const srtStat   = srtExists ? fs.statSync(SUBTITLE_PATH) : null;
+        const entries   = srtExists
+          ? fs.readFileSync(SUBTITLE_PATH, 'utf-8').split('\n').filter(l => l.includes('-->')).length
+          : 0;
+        send({ type: 'done', message: '\u2705 Transcription complete!', entries, size: srtStat?.size });
+      } else {
+        send({ type: 'error', message: `\u274c Whisper failed with exit code ${code}` });
+      }
+      res.end();
+    });
+
+    req.on('close', () => {
+      if (activeProc) { killProcessTree(activeProc); isGenerating = false; activeProc = null; }
+    });
+    return;
   }
 
   // ── POST /api/cancel ─────────────────────────────────────────────────────────

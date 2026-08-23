@@ -3,7 +3,7 @@
 // computes each clip's duration, then renders via native FFmpeg with
 // smooth, cinematic Ken Burns digital pans and zoom-ins.
 
-import { readdirSync, existsSync, writeFileSync, unlinkSync } from 'fs';
+import { readdirSync, existsSync, writeFileSync, readFileSync, unlinkSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync, spawn } from 'child_process';
@@ -16,10 +16,15 @@ const OUTPUT_PATH  = resolve(__dirname, 'output.mp4');
 const CONCAT_FILE  = resolve(__dirname, 'concat_list.txt');
 const FILTER_FILE  = resolve(__dirname, 'filter_complex.txt');
 const SUBTITLE_PATH = resolve(__dirname, 'subtitles/subtitles.srt');
+const ASS_PATH      = resolve(__dirname, 'subtitles/subtitles.ass');
 
 const isFast   = process.argv.includes('--fast');
 const is2K     = process.argv.includes('--2k');
 const isStatic = process.argv.includes('--static') || process.argv.includes('--no-motion');
+
+// Parse optional active-effects list passed from the UI: --effects=zoom-in,pan-left,...
+const effectsArg = process.argv.find(a => a.startsWith('--effects='));
+const activeEffectLabels = effectsArg ? effectsArg.slice('--effects='.length).split(',') : null;
 
 // ── Helper: Get audio duration dynamically with ffprobe ────────────────────
 function getAudioDuration(filePath) {
@@ -95,22 +100,105 @@ if (hasSubs) {
   console.log('💬 No subtitle file found — rendering without captions');
 }
 
-// ── 2. Motion Presets (Ken Burns Digital Pans & Zooms) ─────────────────────
-// Overscale factor: image is scaled 15% larger than canvas, allowing smooth panning
-// and zooming across the frame without revealing borders.
+// ── 2. Motion Effects Pool ──────────────────────────────────────────────────
+// Images are overscaled 15% so pans/zooms never reveal the canvas edge.
 const OVER   = 1.15;
-const ZOOM   = 0.08; // 8% subtle zoom motion
-const PAN_PX = Math.round(outWidth * 0.05);  // 5% horizontal pan
-const PAN_PY = Math.round(outHeight * 0.05); // 5% vertical pan
+const ZOOM   = 0.08;  // max zoom magnitude
+const PAN_PX = Math.round(outWidth  * 0.05);
+const PAN_PY = Math.round(outHeight * 0.05);
 
-const MOTIONS = [
-  { label: 'zoom-in center',          zoomDir:  1, dx:  0,       dy:  0       },
-  { label: 'pan left→right',          zoomDir:  0, dx: -PAN_PX,  dy:  0       },
-  { label: 'zoom-out center',         zoomDir: -1, dx:  0,       dy:  0       },
-  { label: 'pan right→left',          zoomDir:  0, dx:  PAN_PX,  dy:  0       },
-  { label: 'pan top-left→bot-right',  zoomDir:  1, dx: -PAN_PX,  dy: -PAN_PY  },
-  { label: 'pan bot-right→top-left',  zoomDir: -1, dx:  PAN_PX,  dy:  PAN_PY  },
+// 10 distinct cinematic effects.
+// zoomDir: 1=zoom-in, -1=zoom-out, 0=no-zoom, ±0.5=half-strength zoom
+const ALL_EFFECTS = [
+  { label: 'zoom-in',   zoomDir:  1,    dx:  0,                        dy:  0      },
+  { label: 'zoom-out',  zoomDir: -1,    dx:  0,                        dy:  0      },
+  { label: 'pan-left',  zoomDir:  0,    dx: -PAN_PX,                   dy:  0      },
+  { label: 'pan-right', zoomDir:  0,    dx:  PAN_PX,                   dy:  0      },
+  { label: 'pan-up',    zoomDir:  0,    dx:  0,                        dy: -PAN_PY },
+  { label: 'pan-down',  zoomDir:  0,    dx:  0,                        dy:  PAN_PY },
+  { label: 'diag-tl',  zoomDir:  0.5,  dx: -PAN_PX,                   dy: -PAN_PY },
+  { label: 'diag-br',  zoomDir: -0.5,  dx:  PAN_PX,                   dy:  PAN_PY },
+  { label: 'push-in',  zoomDir:  1,    dx: -Math.round(PAN_PX * 0.6), dy:  0      },
+  { label: 'pull-out', zoomDir: -1,    dx:  Math.round(PAN_PX * 0.6), dy:  0      },
 ];
+
+// Build the active pool from --effects= CLI arg; fall back to all effects
+const _activePool = activeEffectLabels
+  ? ALL_EFFECTS.filter(e => activeEffectLabels.includes(e.label))
+  : ALL_EFFECTS;
+const EFFECT_POOL = _activePool.length > 0 ? _activePool : ALL_EFFECTS;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+// Deterministic hash: same image filename always maps to the same effect
+function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+// ── SRT → ASS Subtitle Converter ─────────────────────────────────────────────
+// Parses an SRT file and emits a properly-styled ASS file with a 200ms
+// fade-in on every cue (line-by-line, clean appearance).
+// Using the `ass` FFmpeg filter avoids the Windows drive-letter path
+// parsing bug that plagued the `subtitles` filter's option handling.
+
+function parseSrtToEntries(content) {
+  const entries = [];
+  const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (const block of normalized.split(/\n\n+/)) {
+    const lines = block.trim().split('\n');
+    const ti = lines.findIndex(l => l.includes('-->'));
+    if (ti === -1) continue;
+    const [startStr, endStr] = lines[ti].split('-->').map(s => s.trim());
+    const text = lines.slice(ti + 1).join('\n').trim();
+    if (!text) continue;
+    entries.push({ start: srtTimeToSec(startStr), end: srtTimeToSec(endStr), text });
+  }
+  return entries;
+}
+
+function srtTimeToSec(t) {
+  const [hms, ms = '0'] = t.split(',');
+  const [h, m, s] = hms.split(':').map(Number);
+  return h * 3600 + m * 60 + s + parseInt(ms, 10) / 1000;
+}
+
+function secToAssTime(sec) {
+  const h  = Math.floor(sec / 3600);
+  const m  = Math.floor((sec % 3600) / 60);
+  const s  = Math.floor(sec % 60);
+  const cs = Math.round((sec % 1) * 100);
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '00')}`;
+}
+
+function buildAssFile(entries, width, height, fontSize) {
+  const header = [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    `PlayResX: ${width}`,
+    `PlayResY: ${height}`,
+    'WrapStyle: 0',
+    'ScaledBorderAndShadow: yes',
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    // White text, 2.5px black outline, semi-transparent box, centred-bottom (Alignment=2)
+    `Style: Default,Inter,${fontSize},&H00FFFFFF,&H000000FF,&H00000000,&H99000000,0,0,0,0,100,100,0,0,1,2.5,1,2,30,30,40,1`,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+  ].join('\n');
+
+  const dialogues = entries.map(e => {
+    // Strip HTML tags from SRT; convert SRT newlines to ASS \N
+    const clean = e.text.replace(/<[^>]+>/g, '').replace(/\n/g, '\\N');
+    // \fad(fadeInMs, fadeOutMs) — 200ms fade-in, instant cut at end
+    return `Dialogue: 0,${secToAssTime(e.start)},${secToAssTime(e.end)},Default,,0,0,0,,{\\fad(200,0)}${clean}`;
+  });
+
+  return header + '\n' + dialogues.join('\n') + '\n';
+}
 
 // ── 3. Build FFmpeg Concat Script & Interval Tree ─────────────────────────
 const concatLines = ['ffconcat version 1.0'];
@@ -126,7 +214,7 @@ for (let i = 0; i < images.length; i++) {
   concatLines.push(`file '${escapedPath}'`);
   concatLines.push(`duration ${duration.toFixed(3)}`);
 
-  const motion = MOTIONS[i % MOTIONS.length];
+  const motion = EFFECT_POOL[simpleHash(img.name) % EFFECT_POOL.length];
   clips.push({ startSec: img.startSec, duration, motion });
 }
 
@@ -156,10 +244,12 @@ function progressExpr(clip) {
 }
 
 function zoomScaleExpr(clip) {
-  if (isStatic || clip.motion.zoomDir === 0) return '1';
+  const zd = clip.motion.zoomDir;
+  if (isStatic || zd === 0) return '1';
+  const strength = Math.abs(zd);
   const p = progressExpr(clip);
-  if (clip.motion.zoomDir > 0) return `(1+${ZOOM}*${p})`;
-  return `(1+${ZOOM}*(1-${p}))`;
+  if (zd > 0) return `(1+${(ZOOM * strength).toFixed(4)}*${p})`;
+  return `(1+${(ZOOM * strength).toFixed(4)}*(1-${p}))`;
 }
 
 function panExpr(clip, axis) {
@@ -198,25 +288,21 @@ if (isStatic) {
 // Chain subtitle filter when an SRT file is present
 const outLabel = hasSubs ? 'vout' : 'v';
 if (hasSubs) {
-  // On Windows, FFmpeg's subtitles filter treats ':' as an option separator,
-  // so 'C:/path' is misread as option name 'C' with value '//path'.
-  // Escape the drive-letter colon (e.g. C: → C\:) and use forward slashes.
-  const srtForFFmpeg = SUBTITLE_PATH
-    .replace(/\\/g, '/')          // backslash → forward slash
-    .replace(/^([A-Za-z]):/, '$1\\:'); // escape drive-letter colon for FFmpeg
-  const fontSize = is2K ? 36 : isFast ? 22 : 28;
-  const subStyle = [
-    'FontName=Inter',
-    `FontSize=${fontSize}`,
-    'PrimaryColour=&H00FFFFFF',   // white text
-    'OutlineColour=&H00000000',   // black outline
-    'BackColour=&H80000000',      // semi-transparent shadow box
-    'Outline=2',
-    'Shadow=1',
-    'Alignment=2',                // centered bottom
-    'MarginV=30',
-  ].join(',');
-  videoFilter += `;[v]subtitles='${srtForFFmpeg}':original_size=${outWidth}x${outHeight}:force_style='${subStyle}'[vout]`;
+  // Convert SRT → ASS with per-cue 200ms fade-in, then use the `ass` filter.
+  // This avoids the Windows drive-letter `:` option-separator bug entirely
+  // and gives us clean line-by-line subtitle rendering via libass.
+  const srtContent = readFileSync(SUBTITLE_PATH, 'utf-8');
+  const entries = parseSrtToEntries(srtContent);
+  const fontSize = is2K ? 52 : isFast ? 32 : 42;
+  writeFileSync(ASS_PATH, buildAssFile(entries, outWidth, outHeight, fontSize), 'utf-8');
+  console.log(`💬 Generated ASS subtitles: ${entries.length} cues with 200ms fade-in`);
+
+  // Same Windows drive-letter colon escape applies to the ass filter
+  const assForFFmpeg = ASS_PATH
+    .replace(/\\/g, '/')
+    .replace(/^([A-Za-z]):/, '$1\\:');
+
+  videoFilter += `;[v]ass='${assForFFmpeg}'[vout]`;
 }
 
 writeFileSync(FILTER_FILE, videoFilter, 'utf-8');
