@@ -18,6 +18,9 @@ concat_list.txt
 filter_complex.txt
 editly-tmp-*/
 
+# Uploaded subtitle files (kept locally, not committed)
+subtitles/*.srt
+
 # OS files
 .DS_Store
 Thumbs.db

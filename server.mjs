@@ -7,11 +7,13 @@ import { spawn, execSync } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const PORT        = 0; // 0 = OS picks a random available port
-const IMAGE_DIR   = path.join(__dirname, 'image');
-const AUDIO_PATH  = path.join(__dirname, 'audio', 'untitled.mp3');
-const OUTPUT_PATH = path.join(__dirname, 'output.mp4');
-const PUBLIC_DIR  = path.join(__dirname, 'public');
+const PORT         = 0; // 0 = OS picks a random available port
+const IMAGE_DIR    = path.join(__dirname, 'image');
+const AUDIO_PATH   = path.join(__dirname, 'audio', 'untitled.mp3');
+const OUTPUT_PATH  = path.join(__dirname, 'output.mp4');
+const PUBLIC_DIR   = path.join(__dirname, 'public');
+const SUBTITLE_DIR = path.join(__dirname, 'subtitles');
+const SUBTITLE_PATH = path.join(SUBTITLE_DIR, 'subtitles.srt');
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function parseTimestamp(filename) {
@@ -149,9 +151,12 @@ const server = http.createServer((req, res) => {
     const audio = getAudioInfo(AUDIO_PATH);
     const outputExists = fs.existsSync(OUTPUT_PATH);
     const outputStat = outputExists ? fs.statSync(OUTPUT_PATH) : null;
+    const subtitleExists = fs.existsSync(SUBTITLE_PATH);
+    const subtitleStat = subtitleExists ? fs.statSync(SUBTITLE_PATH) : null;
     return json(res, {
       audio,
       output: outputExists ? { size: outputStat.size, mtime: outputStat.mtime } : null,
+      subtitle: subtitleExists ? { name: 'subtitles.srt', size: subtitleStat.size } : null,
       isGenerating,
     });
   }
@@ -246,6 +251,57 @@ const server = http.createServer((req, res) => {
       }
     });
     return;
+  }
+
+  // ── POST /api/upload-srt ─────────────────────────────────────────────────────
+  if (path_ === '/api/upload-srt' && req.method === 'POST') {
+    const contentType = req.headers['content-type'] || '';
+    const boundaryMatch = contentType.match(/boundary=([^;]+)/);
+    if (!boundaryMatch) return json(res, { error: 'Missing multipart boundary' }, 400);
+    const boundary = boundaryMatch[1].trim();
+
+    const chunks = [];
+    req.on('data', c => chunks.push(c));
+    req.on('end', () => {
+      try {
+        const body = Buffer.concat(chunks);
+        const bodyStr = body.toString('binary');
+
+        // Find file content between boundaries
+        const startMarker = `\r\n\r\n`;
+        const endMarker = `\r\n--${boundary}`;
+        const startIdx = bodyStr.indexOf(startMarker);
+        const endIdx   = bodyStr.indexOf(endMarker, startIdx + startMarker.length);
+        if (startIdx === -1 || endIdx === -1) return json(res, { error: 'Malformed multipart body' }, 400);
+
+        const fileContent = body.slice(startIdx + startMarker.length, endIdx);
+
+        // Validate: must look like an SRT (contains "-->")
+        const preview = fileContent.slice(0, 512).toString('utf-8');
+        if (!preview.includes('-->')) return json(res, { error: 'File does not appear to be a valid SRT' }, 400);
+
+        // Ensure directory exists
+        if (!fs.existsSync(SUBTITLE_DIR)) fs.mkdirSync(SUBTITLE_DIR, { recursive: true });
+        fs.writeFileSync(SUBTITLE_PATH, fileContent);
+
+        const lineCount = fileContent.toString('utf-8').split('\n').filter(l => l.includes('-->')).length;
+        return json(res, { ok: true, size: fileContent.length, entries: lineCount });
+      } catch (e) {
+        return json(res, { error: e.message }, 500);
+      }
+    });
+    req.on('error', e => json(res, { error: e.message }, 500));
+    return;
+  }
+
+  // ── DELETE /api/srt ──────────────────────────────────────────────────────────
+  if (path_ === '/api/srt' && req.method === 'DELETE') {
+    try {
+      if (fs.existsSync(SUBTITLE_PATH)) fs.unlinkSync(SUBTITLE_PATH);
+      return json(res, { ok: true });
+    } catch (e) {
+      return json(res, { error: e.message }, 500);
+    }
   }
 
   // ── POST /api/cancel ─────────────────────────────────────────────────────────

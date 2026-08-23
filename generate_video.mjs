@@ -10,11 +10,12 @@ import { execSync, spawn } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const IMAGE_DIR   = resolve(__dirname, 'image');
-const AUDIO_PATH  = resolve(__dirname, 'audio/untitled.mp3');
-const OUTPUT_PATH = resolve(__dirname, 'output.mp4');
-const CONCAT_FILE = resolve(__dirname, 'concat_list.txt');
-const FILTER_FILE = resolve(__dirname, 'filter_complex.txt');
+const IMAGE_DIR    = resolve(__dirname, 'image');
+const AUDIO_PATH   = resolve(__dirname, 'audio/untitled.mp3');
+const OUTPUT_PATH  = resolve(__dirname, 'output.mp4');
+const CONCAT_FILE  = resolve(__dirname, 'concat_list.txt');
+const FILTER_FILE  = resolve(__dirname, 'filter_complex.txt');
+const SUBTITLE_PATH = resolve(__dirname, 'subtitles/subtitles.srt');
 
 const isFast   = process.argv.includes('--fast');
 const is2K     = process.argv.includes('--2k');
@@ -85,6 +86,14 @@ const totalSec = Math.floor(AUDIO_DURATION % 60);
 console.log(`📸 Found ${images.length} timestamped images, spanning ${images[0].startSec}s → ${images.at(-1).startSec}s`);
 console.log(`📐 Render Target: ${outWidth}x${outHeight} @ ${fps}fps (${is2K ? '2K QHD' : isFast ? '720p HD Preview' : '1080p Full HD'})`);
 console.log(`🎵 Audio duration: ${AUDIO_DURATION.toFixed(2)}s (${totalMin}m ${totalSec}s)`);
+
+// ── Subtitles ────────────────────────────────────────────────────────────────
+const hasSubs = existsSync(SUBTITLE_PATH);
+if (hasSubs) {
+  console.log(`💬 Subtitles detected: ${SUBTITLE_PATH}`);
+} else {
+  console.log('💬 No subtitle file found — rendering without captions');
+}
 
 // ── 2. Motion Presets (Ken Burns Digital Pans & Zooms) ─────────────────────
 // Overscale factor: image is scaled 15% larger than canvas, allowing smooth panning
@@ -186,6 +195,26 @@ if (isStatic) {
     `[bgblur][bigzoom]overlay='${overlayX}':'${overlayY}':eval=frame,format=yuv420p[v]`;
 }
 
+// Chain subtitle filter when an SRT file is present
+const outLabel = hasSubs ? 'vout' : 'v';
+if (hasSubs) {
+  // Forward-slash path required by FFmpeg's subtitles filter on all platforms
+  const srtForFFmpeg = SUBTITLE_PATH.replace(/\\/g, '/');
+  const fontSize = is2K ? 36 : isFast ? 22 : 28;
+  const subStyle = [
+    'FontName=Inter',
+    `FontSize=${fontSize}`,
+    'PrimaryColour=&H00FFFFFF',   // white text
+    'OutlineColour=&H00000000',   // black outline
+    'BackColour=&H80000000',      // semi-transparent shadow box
+    'Outline=2',
+    'Shadow=1',
+    'Alignment=2',                // centered bottom
+    'MarginV=30',
+  ].join(',');
+  videoFilter += `;[v]subtitles='${srtForFFmpeg}':force_style='${subStyle}'[vout]`;
+}
+
 writeFileSync(FILTER_FILE, videoFilter, 'utf-8');
 
 const hasAudio = existsSync(AUDIO_PATH);
@@ -195,7 +224,7 @@ const ffmpegArgs = [
   '-i', CONCAT_FILE,
   ...(hasAudio ? ['-i', AUDIO_PATH] : []),
   '-filter_complex_script', FILTER_FILE,
-  '-map', '[v]',
+  '-map', `[${outLabel}]`,
   ...(hasAudio ? ['-map', '1:a:0', '-c:a', 'aac', '-b:a', '192k'] : []),
   '-c:v', 'libx264',
   '-preset', preset,
@@ -207,7 +236,7 @@ const ffmpegArgs = [
   '-progress', 'pipe:1',
 ];
 
-console.log(`\n🎬 Starting native FFmpeg render with smooth digital pans & zooms (${outWidth}x${outHeight} @ ${fps}fps, CRF 17)...`);
+console.log(`\n🎬 Starting native FFmpeg render with smooth digital pans & zooms (${outWidth}x${outHeight} @ ${fps}fps, CRF 17)${hasSubs ? ' + subtitles' : ''}...`);
 
 await new Promise((resolvePromise, rejectPromise) => {
   const proc = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
