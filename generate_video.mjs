@@ -392,7 +392,7 @@ const ffmpegArgs = [
   '-preset', preset,
   '-crf', '17', // High quality crisp encoding
   '-movflags', 'faststart',
-  '-shortest',
+  '-t', AUDIO_DURATION.toFixed(3),
   '-y',
   OUTPUT_PATH,
   '-progress', 'pipe:1',
