@@ -1,0 +1,11 @@
+{
+  "motionMode": "ken-burns",
+  "globalTransition": "wipeleft",
+  "transitionDuration": 0.8,
+  "clipOverrides": {
+    "[0-00]_Hand-drawn_2D_dood.jpg": {
+      "transition": "circlecrop",
+      "motion": "zoom-in"
+    }
+  }
+}

@@ -16,6 +16,7 @@ const PUBLIC_DIR   = path.join(__dirname, 'public');
 const SUBTITLE_DIR = path.join(__dirname, 'subtitles');
 const SUBTITLE_PATH = path.join(SUBTITLE_DIR, 'subtitles.srt');
 const SUBTITLE_SETTINGS_PATH = path.join(SUBTITLE_DIR, 'settings.json');
+const TIMELINE_SETTINGS_PATH = path.join(SUBTITLE_DIR, 'timeline_settings.json');
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function parseSrtCues(content) {
@@ -266,6 +267,43 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ── GET /api/timeline-settings ─────────────────────────────────────────────
+  if (path_ === '/api/timeline-settings' && req.method === 'GET') {
+    const defaultTimeline = {
+      globalTransition: 'fade',
+      transitionDuration: 0.5,
+      motionMode: 'ken-burns',
+      activeEffects: ['zoom-in','zoom-out','pan-left','pan-right','pan-up','pan-down','diag-tl','diag-br','push-in','pull-out'],
+      clipOverrides: {},
+    };
+    if (!fs.existsSync(TIMELINE_SETTINGS_PATH)) {
+      return json(res, defaultTimeline);
+    }
+    try {
+      const data = JSON.parse(fs.readFileSync(TIMELINE_SETTINGS_PATH, 'utf-8'));
+      return json(res, { ...defaultTimeline, ...data });
+    } catch (e) {
+      return json(res, defaultTimeline);
+    }
+  }
+
+  // ── POST /api/timeline-settings ────────────────────────────────────────────
+  if ((path_ === '/api/timeline-settings') && (req.method === 'POST' || req.method === 'PUT')) {
+    let body = '';
+    req.on('data', c => body += c.toString());
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}');
+        if (!fs.existsSync(SUBTITLE_DIR)) fs.mkdirSync(SUBTITLE_DIR, { recursive: true });
+        fs.writeFileSync(TIMELINE_SETTINGS_PATH, JSON.stringify(parsed, null, 2), 'utf-8');
+        return json(res, { ok: true, settings: parsed });
+      } catch (e) {
+        return json(res, { error: e.message }, 500);
+      }
+    });
+    return;
+  }
+
   // ── POST /api/generate ────────────────────────────────────────────────────────
   if (path_ === '/api/generate' && req.method === 'POST') {
     if (isGenerating) return json(res, { error: 'Already generating' }, 409);
@@ -284,6 +322,8 @@ const server = http.createServer((req, res) => {
     const resolution = url.searchParams.get('res') || (url.searchParams.get('fast') === 'true' ? '720p' : '1080p');
     const motionParam = url.searchParams.get('motion');
     const effectsParam = url.searchParams.get('effects') || '';
+    const transitionParam = url.searchParams.get('transition') || '';
+    const transitionDurParam = url.searchParams.get('transition_dur') || '';
 
     const args = ['generate_video.mjs'];
     if (resolution === '720p' || url.searchParams.get('fast') === 'true') {
@@ -299,12 +339,20 @@ const server = http.createServer((req, res) => {
       args.push(`--effects=${effectsParam}`);
     }
 
+    if (transitionParam) {
+      args.push(`--transition=${transitionParam}`);
+    }
+    if (transitionDurParam) {
+      args.push(`--transition-duration=${transitionDurParam}`);
+    }
+
     const modeLabel = resolution === '2k' ? '2K QHD (1440p)' : resolution === '720p' ? '720p HD DRAFT' : '1080p FULL HD';
     const effectCount = effectsParam ? effectsParam.split(',').length : 10;
-    const motionLabel = isStaticMode ? 'Static Slides (No Motion)' : (effectsParam ? `${effectCount} effect${effectCount !== 1 ? 's' : ''}` : 'all 10 Ken Burns effects');
+    const motionLabel = isStaticMode ? 'Static Slides (No Motion)' : (effectsParam ? `${effectCount} effect${effectCount !== 1 ? 's' : ''}` : 'smooth Ken Burns');
+    const transLabel = transitionParam ? `Transition: ${transitionParam} (${transitionDurParam || 0.5}s)` : 'Transitions enabled';
     send({
       type: 'start',
-      message: `🚀 Starting video generation in ${modeLabel} mode (${motionLabel}) via Native FFmpeg...`,
+      message: `🚀 Starting video generation in ${modeLabel} mode (${motionLabel} · ${transLabel}) via Native FFmpeg...`,
     });
 
     activeProc = spawn('node', args, { cwd: __dirname });

@@ -1,7 +1,8 @@
 // generate_video.mjs
-// Reads images from ./image/, parses [M-SS] timestamps from filenames,
-// computes each clip's duration, then renders via native FFmpeg with
-// smooth, cinematic Ken Burns digital pans and zoom-ins.
+// Professional Video Pipeline with:
+// 1. Smooth, non-shaking Ken Burns motion engine (subpixel-stable high-res coordinate math)
+// 2. Native FFmpeg xfade transitions between clips (Crossfade, Wipes, Slides, Dissolves, Zoom, etc.)
+// 3. Exact audio & subtitle sync with customizable ASS typography overlay.
 
 import { readdirSync, existsSync, writeFileSync, readFileSync, unlinkSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -10,13 +11,14 @@ import { execSync, spawn } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const IMAGE_DIR    = resolve(__dirname, 'image');
-const AUDIO_PATH   = resolve(__dirname, 'audio/untitled.mp3');
-const OUTPUT_PATH  = resolve(__dirname, 'output.mp4');
-const CONCAT_FILE  = resolve(__dirname, 'concat_list.txt');
-const FILTER_FILE  = resolve(__dirname, 'filter_complex.txt');
-const SUBTITLE_PATH = resolve(__dirname, 'subtitles/subtitles.srt');
-const ASS_PATH      = resolve(__dirname, 'subtitles/subtitles.ass');
+const IMAGE_DIR             = resolve(__dirname, 'image');
+const AUDIO_PATH            = resolve(__dirname, 'audio/untitled.mp3');
+const OUTPUT_PATH           = resolve(__dirname, 'output.mp4');
+const FILTER_FILE           = resolve(__dirname, 'filter_complex.txt');
+const SUBTITLE_PATH         = resolve(__dirname, 'subtitles/subtitles.srt');
+const ASS_PATH              = resolve(__dirname, 'subtitles/subtitles.ass');
+const TIMELINE_SETTINGS_PATH = resolve(__dirname, 'subtitles/timeline_settings.json');
+const SUBTITLE_SETTINGS_PATH = resolve(__dirname, 'subtitles/settings.json');
 
 const isFast   = process.argv.includes('--fast');
 const is2K     = process.argv.includes('--2k');
@@ -26,7 +28,14 @@ const isStatic = process.argv.includes('--static') || process.argv.includes('--n
 const effectsArg = process.argv.find(a => a.startsWith('--effects='));
 const activeEffectLabels = effectsArg ? effectsArg.slice('--effects='.length).split(',') : null;
 
-// ── Helper: Get audio duration dynamically with ffprobe ────────────────────
+// Parse optional global transition and duration
+const transitionArg = process.argv.find(a => a.startsWith('--transition='));
+const cliTransition = transitionArg ? transitionArg.slice('--transition='.length) : null;
+
+const transDurArg = process.argv.find(a => a.startsWith('--transition-duration='));
+const cliTransDur = transDurArg ? parseFloat(transDurArg.slice('--transition-duration='.length)) : null;
+
+// ── 1. Audio Duration Check ──────────────────────────────────────────────────
 function getAudioDuration(filePath) {
   if (!existsSync(filePath)) return 600;
   try {
@@ -46,7 +55,7 @@ function getAudioDuration(filePath) {
 
 const AUDIO_DURATION = getAudioDuration(AUDIO_PATH);
 
-// ── 1. Collect & sort images by timestamp ──────────────────────────────────
+// ── 2. Collect & Sort Images ─────────────────────────────────────────────────
 function parseTimestamp(filename) {
   const m = filename.match(/^\[(\d+)-(\d+)\]/);
   if (!m) return null;
@@ -60,18 +69,46 @@ if (!existsSync(IMAGE_DIR)) {
   process.exit(1);
 }
 
-const images = readdirSync(IMAGE_DIR)
+const rawImages = readdirSync(IMAGE_DIR)
   .filter(f => /\.(jpe?g|png|webp)$/i.test(f))
   .map(f => ({ name: f, startSec: parseTimestamp(f) }))
   .filter(x => x.startSec !== null)
   .sort((a, b) => a.startSec - b.startSec);
 
-if (images.length === 0) {
+if (rawImages.length === 0) {
   console.error('❌ No timestamped images found in image directory!');
   process.exit(1);
 }
 
-// Resolution Selection (Crisp 1080p Full HD default or 2K QHD)
+// Compute each clip's duration
+const images = rawImages.map((img, i) => {
+  const nextStart = i < rawImages.length - 1 ? rawImages[i + 1].startSec : AUDIO_DURATION;
+  const durationSec = Math.max(0.1, nextStart - img.startSec);
+  return {
+    ...img,
+    durationSec: parseFloat(durationSec.toFixed(2)),
+  };
+});
+
+// Load timeline settings if available
+let timelineSettings = {
+  globalTransition: 'fade',
+  transitionDuration: 0.5,
+  motionMode: 'ken-burns',
+  clipOverrides: {},
+};
+
+if (existsSync(TIMELINE_SETTINGS_PATH)) {
+  try {
+    const raw = JSON.parse(readFileSync(TIMELINE_SETTINGS_PATH, 'utf-8'));
+    timelineSettings = { ...timelineSettings, ...raw };
+  } catch {}
+}
+
+const globalTransition = cliTransition || timelineSettings.globalTransition || 'fade';
+const globalTransDur   = !isNaN(cliTransDur) && cliTransDur !== null ? cliTransDur : (timelineSettings.transitionDuration ?? 0.5);
+
+// Resolution Selection
 let outWidth = 1920;
 let outHeight = 1080;
 
@@ -89,62 +126,36 @@ const preset = isFast ? 'ultrafast' : 'veryfast';
 const totalMin = Math.floor(AUDIO_DURATION / 60);
 const totalSec = Math.floor(AUDIO_DURATION % 60);
 console.log(`📸 Found ${images.length} timestamped images, spanning ${images[0].startSec}s → ${images.at(-1).startSec}s`);
-console.log(`📐 Render Target: ${outWidth}x${outHeight} @ ${fps}fps (${is2K ? '2K QHD' : isFast ? '720p HD Preview' : '1080p Full HD'})`);
+console.log(`📐 Target Canvas: ${outWidth}x${outHeight} @ ${fps}fps (${is2K ? '2K QHD' : isFast ? '720p HD Draft' : '1080p Full HD'})`);
 console.log(`🎵 Audio duration: ${AUDIO_DURATION.toFixed(2)}s (${totalMin}m ${totalSec}s)`);
+console.log(`🔀 Global Transition: ${globalTransition} (${globalTransDur}s)`);
 
-// ── Subtitles ────────────────────────────────────────────────────────────────
-const hasSubs = existsSync(SUBTITLE_PATH);
-if (hasSubs) {
-  console.log(`💬 Subtitles detected: ${SUBTITLE_PATH}`);
-} else {
-  console.log('💬 No subtitle file found — rendering without captions');
-}
-
-// ── 2. Motion Effects Pool ──────────────────────────────────────────────────
-// Images are overscaled 15% so pans/zooms never reveal the canvas edge.
-const OVER   = 1.15;
-const ZOOM   = 0.08;  // max zoom magnitude
-const PAN_PX = Math.round(outWidth  * 0.05);
-const PAN_PY = Math.round(outHeight * 0.05);
-
-// 10 distinct cinematic effects.
-// zoomDir: 1=zoom-in, -1=zoom-out, 0=no-zoom, ±0.5=half-strength zoom
+// ── 3. Motion Effects Pool & Hash ────────────────────────────────────────────
 const ALL_EFFECTS = [
-  { label: 'zoom-in',   zoomDir:  1,    dx:  0,                        dy:  0      },
-  { label: 'zoom-out',  zoomDir: -1,    dx:  0,                        dy:  0      },
-  { label: 'pan-left',  zoomDir:  0,    dx: -PAN_PX,                   dy:  0      },
-  { label: 'pan-right', zoomDir:  0,    dx:  PAN_PX,                   dy:  0      },
-  { label: 'pan-up',    zoomDir:  0,    dx:  0,                        dy: -PAN_PY },
-  { label: 'pan-down',  zoomDir:  0,    dx:  0,                        dy:  PAN_PY },
-  { label: 'diag-tl',  zoomDir:  0.5,  dx: -PAN_PX,                   dy: -PAN_PY },
-  { label: 'diag-br',  zoomDir: -0.5,  dx:  PAN_PX,                   dy:  PAN_PY },
-  { label: 'push-in',  zoomDir:  1,    dx: -Math.round(PAN_PX * 0.6), dy:  0      },
-  { label: 'pull-out', zoomDir: -1,    dx:  Math.round(PAN_PX * 0.6), dy:  0      },
+  'zoom-in',
+  'zoom-out',
+  'pan-left',
+  'pan-right',
+  'pan-up',
+  'pan-down',
+  'diag-tl',
+  'diag-br',
+  'push-in',
+  'pull-out',
 ];
 
-// Build the active pool from --effects= CLI arg; fall back to all effects
 const _activePool = activeEffectLabels
-  ? ALL_EFFECTS.filter(e => activeEffectLabels.includes(e.label))
+  ? ALL_EFFECTS.filter(e => activeEffectLabels.includes(e))
   : ALL_EFFECTS;
 const EFFECT_POOL = _activePool.length > 0 ? _activePool : ALL_EFFECTS;
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-// Deterministic hash: same image filename always maps to the same effect
 function simpleHash(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
   return Math.abs(h);
 }
 
-// ── SRT → ASS Subtitle Converter ─────────────────────────────────────────────
-// Parses an SRT file and emits a properly-styled ASS file with customizable
-// fonts, sizes, colors, strokes, shadow boxes, uppercase transform, and transitions.
-// Using the `ass` FFmpeg filter avoids the Windows drive-letter path
-// parsing bug that plagued the `subtitles` filter's option handling.
-
-const SUBTITLE_SETTINGS_PATH = resolve(__dirname, 'subtitles/settings.json');
-
+// ── 4. Subtitle ASS Builder ──────────────────────────────────────────────────
 const DEFAULT_SUB_SETTINGS = {
   fontName: 'Inter',
   fontSize: 42,
@@ -157,8 +168,8 @@ const DEFAULT_SUB_SETTINGS = {
   shadowDepth: 1.0,
   backColor: '#000000',
   backAlpha: '99',
-  borderStyle: 1, // 1 = Outline + Drop shadow, 3 = Opaque Box Banner
-  alignment: 2,   // 2 = Bottom-Center, 8 = Mid-Center, 5 = Top-Center
+  borderStyle: 1,
+  alignment: 2,
   marginV: 40,
   fadeInMs: 200,
 };
@@ -166,9 +177,7 @@ const DEFAULT_SUB_SETTINGS = {
 function hexToAssColor(hex, alphaHex = '00') {
   if (!hex) return `&H${alphaHex}000000`;
   let clean = hex.replace('#', '').trim();
-  if (clean.length === 3) {
-    clean = clean.split('').map(c => c + c).join('');
-  }
+  if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
   if (clean.length === 8) {
     const r = clean.slice(0, 2);
     const g = clean.slice(2, 4);
@@ -187,9 +196,7 @@ function loadSubtitleSettings() {
     try {
       const raw = JSON.parse(readFileSync(SUBTITLE_SETTINGS_PATH, 'utf-8'));
       return { ...DEFAULT_SUB_SETTINGS, ...raw };
-    } catch (e) {
-      console.warn('⚠️ Could not parse subtitle settings, using defaults:', e.message);
-    }
+    } catch {}
   }
   return { ...DEFAULT_SUB_SETTINGS };
 }
@@ -225,16 +232,13 @@ function secToAssTime(sec) {
 
 function buildAssFile(entries, width, height, subSettings = {}, resScale = 1.0) {
   const cfg = { ...DEFAULT_SUB_SETTINGS, ...subSettings };
-
   const scaledFontSize = Math.max(14, Math.round((cfg.fontSize || 42) * resScale));
   const scaledMarginV  = Math.max(10, Math.round((cfg.marginV ?? 40) * resScale));
   const scaledOutline  = Math.max(0, (cfg.outlineWidth ?? 2.5) * resScale).toFixed(1);
   const scaledShadow   = Math.max(0, (cfg.shadowDepth ?? 1.0) * resScale).toFixed(1);
-
   const primaryAss = hexToAssColor(cfg.primaryColor, '00');
   const outlineAss = hexToAssColor(cfg.outlineColor, '00');
   const backAss    = hexToAssColor(cfg.backColor || '#000000', cfg.backAlpha || '99');
-
   const boldVal     = cfg.bold ? -1 : 0;
   const italicVal   = cfg.italic ? -1 : 0;
   const borderStyle = cfg.borderStyle || 1;
@@ -262,143 +266,177 @@ function buildAssFile(entries, width, height, subSettings = {}, resScale = 1.0) 
 
   const dialogues = entries.map(e => {
     let clean = e.text.replace(/<[^>]+>/g, '').replace(/\n/g, '\\N');
-    if (cfg.uppercase) {
-      clean = clean.toUpperCase();
-    }
+    if (cfg.uppercase) clean = clean.toUpperCase();
     return `Dialogue: 0,${secToAssTime(e.start)},${secToAssTime(e.end)},Default,,0,0,0,,${fadTag}${clean}`;
   });
 
   return header + '\n' + dialogues.join('\n') + '\n';
 }
 
-// ── 3. Build FFmpeg Concat Script & Interval Tree ─────────────────────────
-const concatLines = ['ffconcat version 1.0'];
-const clips = [];
+// ── 5. Build Subpixel Smooth Ken Burns Filter for a Single Clip ─────────────
+// High internal base resolution prevents any discrete integer rounding jumps or vibration.
+const BASE_W = 2560;
+const BASE_H = 1440;
 
-for (let i = 0; i < images.length; i++) {
-  const img = images[i];
-  const nextStart = i < images.length - 1 ? images[i + 1].startSec : AUDIO_DURATION;
-  const duration = Math.max(nextStart - img.startSec, 0.1);
-  const fullPath = resolve(IMAGE_DIR, img.name).replace(/\\/g, '/');
-  const escapedPath = fullPath.replace(/'/g, "'\\''");
+function buildClipFilter(clipIdx, effectName, totalFrames, clipFps, width, height) {
+  if (isStatic || effectName === 'static') {
+    return `[${clipIdx}:v]scale=${BASE_W}:${BASE_H}:force_original_aspect_ratio=increase,crop=${BASE_W}:${BASE_H},zoompan=z=1.0:x=0:y=0:d=${totalFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS[v${clipIdx}];\n`;
+  }
 
-  concatLines.push(`file '${escapedPath}'`);
-  concatLines.push(`duration ${duration.toFixed(3)}`);
+  const d = Math.max(1, totalFrames);
+  const zoomInRate = (0.12 / d).toFixed(6);
+  const pushInRate = (0.20 / d).toFixed(6);
 
-  const motion = EFFECT_POOL[simpleHash(img.name) % EFFECT_POOL.length];
-  clips.push({ startSec: img.startSec, duration, motion });
+  let zpExpr;
+  switch (effectName) {
+    case 'zoom-out':
+      zpExpr = `z='max(1.14-${zoomInRate}*on,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
+      break;
+    case 'pan-left':
+      zpExpr = `z=1.12:x='max(0, (iw-iw/zoom)*(1-on/${d}))':y='ih/2-(ih/zoom/2)'`;
+      break;
+    case 'pan-right':
+      zpExpr = `z=1.12:x='min(iw-iw/zoom, (iw-iw/zoom)*(on/${d}))':y='ih/2-(ih/zoom/2)'`;
+      break;
+    case 'pan-up':
+      zpExpr = `z=1.12:x='iw/2-(iw/zoom/2)':y='max(0, (ih-ih/zoom)*(1-on/${d}))'`;
+      break;
+    case 'pan-down':
+      zpExpr = `z=1.12:x='iw/2-(iw/zoom/2)':y='min(ih-ih/zoom, (ih-ih/zoom)*(on/${d}))'`;
+      break;
+    case 'diag-tl':
+      zpExpr = `z='min(zoom+${(0.06/d).toFixed(6)},1.12)':x='max(0, (iw-iw/zoom)*(1-on/${d}))':y='max(0, (ih-ih/zoom)*(1-on/${d}))'`;
+      break;
+    case 'diag-br':
+      zpExpr = `z='min(zoom+${(0.06/d).toFixed(6)},1.12)':x='min(iw-iw/zoom, (iw-iw/zoom)*(on/${d}))':y='min(ih-ih/zoom, (ih-ih/zoom)*(on/${d}))'`;
+      break;
+    case 'push-in':
+      zpExpr = `z='min(zoom+${pushInRate},1.22)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
+      break;
+    case 'pull-out':
+      zpExpr = `z='max(1.22-${pushInRate}*on,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
+      break;
+    case 'zoom-in':
+    default:
+      zpExpr = `z='min(zoom+${zoomInRate},1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
+      break;
+  }
+
+  return `[${clipIdx}:v]scale=${BASE_W}:${BASE_H}:force_original_aspect_ratio=increase,crop=${BASE_W}:${BASE_H},zoompan=${zpExpr}:d=${totalFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS[v${clipIdx}];\n`;
 }
 
-// Last file repeated for concat demuxer requirement
-const lastImgPath = resolve(IMAGE_DIR, images.at(-1).name).replace(/\\/g, '/').replace(/'/g, "'\\''");
-concatLines.push(`file '${lastImgPath}'`);
+// ── 6. Assemble Complex Filter Graph with Transitions ─────────────────────────
+console.log(`\n🧩 Building video pipeline for ${images.length} clips...`);
 
-writeFileSync(CONCAT_FILE, concatLines.join('\n'), 'utf-8');
+const inputs = [];
+let filterGraph = '';
 
-// ── 4. Build Motion Math & Expressions ─────────────────────────────────────
-const bigW = Math.round(outWidth  * OVER / 2) * 2;
-const bigH = Math.round(outHeight * OVER / 2) * 2;
-const headX = (bigW - outWidth)  / 2;
-const headY = (bigH - outHeight) / 2;
+// Determine transition between clip i and clip i+1
+const clipData = images.map((img, i) => {
+  const override = timelineSettings.clipOverrides?.[img.name] || {};
+  const effect = isStatic ? 'static' : (override.motion || EFFECT_POOL[simpleHash(img.name) % EFFECT_POOL.length]);
+  
+  let transition = override.transition || globalTransition;
+  if (transition === 'random') {
+    const ALL_XFADES = ['fade', 'wipeleft', 'wiperight', 'slideleft', 'slideright', 'circlecrop', 'dissolve', 'zoomin', 'smoothleft', 'smoothright'];
+    transition = ALL_XFADES[simpleHash(img.name + '_trans') % ALL_XFADES.length];
+  }
+  
+  const transDur = Math.min(
+    Math.max(0.1, override.transitionDuration ?? globalTransDur),
+    Math.max(0.1, img.durationSec * 0.75)
+  );
 
-function buildTree(items, getter) {
-  if (items.length === 1) return getter(items[0]);
-  const mid = Math.floor(items.length / 2);
-  const left = items.slice(0, mid);
-  const right = items.slice(mid);
-  const split = left[left.length - 1].startSec + left[left.length - 1].duration;
-  return `if(lt(t,${split.toFixed(3)}),${buildTree(left, getter)},${buildTree(right, getter)})`;
+  return {
+    ...img,
+    effect,
+    transition,
+    transDur: transition === 'cut' || transition === 'none' ? 0 : transDur,
+  };
+});
+
+// Calculate total frames required for each clip
+// If clip i transitions into clip i+1 with transition duration T, clip i needs an extra T seconds of rendered frames so xfade can blend
+for (let i = 0; i < clipData.length; i++) {
+  const c = clipData[i];
+  const nextTransDur = i < clipData.length - 1 ? clipData[i].transDur : 0;
+  const clipRenderDuration = c.durationSec + nextTransDur;
+  const totalFrames = Math.max(1, Math.round(clipRenderDuration * fps));
+
+  const imgPath = resolve(IMAGE_DIR, c.name).replace(/\\/g, '/');
+  inputs.push('-i', imgPath);
+
+  filterGraph += buildClipFilter(i, c.effect, totalFrames, fps, outWidth, outHeight);
 }
 
-function progressExpr(clip) {
-  return `clip((t-${clip.startSec.toFixed(3)})/${clip.duration.toFixed(3)},0,1)`;
+// Chain xfade transitions between clips
+let lastStream = 'v0';
+let currentTimelineOffset = clipData[0].durationSec;
+
+for (let i = 1; i < clipData.length; i++) {
+  const prevClip = clipData[i - 1];
+  const currClip = clipData[i];
+  const outLabel = `xf${i}`;
+  const tType = prevClip.transition;
+  const tDur  = prevClip.transDur;
+
+  if (tDur > 0 && tType !== 'cut' && tType !== 'none') {
+    const xfadeOffset = Math.max(0, currentTimelineOffset - tDur).toFixed(3);
+    filterGraph += `[${lastStream}][v${i}]xfade=transition=${tType}:duration=${tDur.toFixed(3)}:offset=${xfadeOffset}[${outLabel}];\n`;
+    currentTimelineOffset += currClip.durationSec;
+  } else {
+    // Hard cut fallback
+    filterGraph += `[${lastStream}][v${i}]concat=n=2:v=1:a=0[${outLabel}];\n`;
+    currentTimelineOffset += currClip.durationSec;
+  }
+  lastStream = outLabel;
 }
 
-function zoomScaleExpr(clip) {
-  const zd = clip.motion.zoomDir;
-  if (isStatic || zd === 0) return '1';
-  const strength = Math.abs(zd);
-  const p = progressExpr(clip);
-  if (zd > 0) return `(1+${(ZOOM * strength).toFixed(4)}*${p})`;
-  return `(1+${(ZOOM * strength).toFixed(4)}*(1-${p}))`;
-}
+filterGraph += `[${lastStream}]format=yuv420p[vfinal]`;
 
-function panExpr(clip, axis) {
-  if (isStatic) return '0';
-  const delta = axis === 'x' ? clip.motion.dx : clip.motion.dy;
-  if (delta === 0) return '0';
-  const p = progressExpr(clip);
-  // Pan from -delta to +delta across the duration
-  return `(-(${delta}) + 2*(${delta})*${p})`;
-}
+// Handle Subtitles
+const hasSubs = existsSync(SUBTITLE_PATH);
+let outputStreamLabel = 'vfinal';
 
-const scaleExpr = buildTree(clips, (c) => zoomScaleExpr(c));
-const panXExpr  = buildTree(clips, (c) => panExpr(c, 'x'));
-const panYExpr  = buildTree(clips, (c) => panExpr(c, 'y'));
-
-// Rock-solid smooth centering: references actual overlay frame dimensions (W-w)/2 and (H-h)/2
-const overlayX = `(W-w)/2-(${panXExpr})`;
-const overlayY = `(H-h)/2-(${panYExpr})`;
-
-// ── 5. Render via FFmpeg with Smooth Digital Pans & Zooms ─────────────────
-const bgW = Math.max(160, Math.round(outWidth / 4));
-const bgH = Math.max(90, Math.round(outHeight / 4));
-
-let videoFilter;
-if (isStatic) {
-  videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
-    `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
-    `[fg]scale=${outWidth}:${outHeight}:force_original_aspect_ratio=decrease[fgscaled];` +
-    `[bgblur][fgscaled]overlay=(W-w)/2:(H-h)/2,format=yuv420p[v]`;
-} else {
-  // Use trunc((...)/2)*2 so width & height are always even integers on every frame,
-  // preventing subpixel phase jitter and shaking during zoom in and zoom out.
-  videoFilter = `[0:v]fps=${fps},split=2[bg][fg];` +
-    `[bg]scale=${bgW}:${bgH}:force_original_aspect_ratio=increase,crop=${bgW}:${bgH},boxblur=8:1,scale=${outWidth}:${outHeight}:flags=bilinear[bgblur];` +
-    `[fg]scale=${bigW}:${bigH}:force_original_aspect_ratio=increase,crop=${bigW}:${bigH},scale='trunc((${bigW}*(${scaleExpr}))/2)*2':'trunc((${bigH}*(${scaleExpr}))/2)*2':eval=frame:flags=bicubic[bigzoom];` +
-    `[bgblur][bigzoom]overlay='${overlayX}':'${overlayY}':eval=frame,format=yuv420p[v]`;
-}
-
-// Chain subtitle filter when an SRT file is present
-const outLabel = hasSubs ? 'vout' : 'v';
 if (hasSubs) {
-  const srtContent = readFileSync(SUBTITLE_PATH, 'utf-8');
-  const entries = parseSrtToEntries(srtContent);
-  const subSettings = loadSubtitleSettings();
-  const resScale = outWidth / 1920;
-  writeFileSync(ASS_PATH, buildAssFile(entries, outWidth, outHeight, subSettings, resScale), 'utf-8');
-  console.log(`💬 Generated ASS subtitles: ${entries.length} cues using font '${subSettings.fontName || 'Inter'}' (${subSettings.fontSize || 42}px${subSettings.bold ? ', Bold' : ''}${subSettings.uppercase ? ', ALL CAPS' : ''})`);
+  try {
+    const srtContent = readFileSync(SUBTITLE_PATH, 'utf-8');
+    const entries = parseSrtToEntries(srtContent);
+    const subSettings = loadSubtitleSettings();
+    const resScale = outWidth / 1920;
+    writeFileSync(ASS_PATH, buildAssFile(entries, outWidth, outHeight, subSettings, resScale), 'utf-8');
+    console.log(`💬 Subtitles: ${entries.length} cues loaded (${subSettings.fontName || 'Inter'}, ${subSettings.fontSize || 42}px)`);
 
-  // Windows drive-letter colon escape applies to the ass filter
-  const assForFFmpeg = ASS_PATH
-    .replace(/\\/g, '/')
-    .replace(/^([A-Za-z]):/, '$1\\:');
-
-  videoFilter += `;[v]ass='${assForFFmpeg}'[vout]`;
+    const assForFFmpeg = ASS_PATH.replace(/\\/g, '/').replace(/^([A-Za-z]):/, '$1\\:');
+    filterGraph += `;\n[vfinal]ass='${assForFFmpeg}'[vout]`;
+    outputStreamLabel = 'vout';
+  } catch (e) {
+    console.warn('⚠️ Subtitle generation error:', e.message);
+  }
 }
 
-writeFileSync(FILTER_FILE, videoFilter, 'utf-8');
+writeFileSync(FILTER_FILE, filterGraph, 'utf-8');
 
+// ── 7. Execute Native FFmpeg Render ──────────────────────────────────────────
 const hasAudio = existsSync(AUDIO_PATH);
+const audioInputIdx = inputs.length / 2;
 const ffmpegArgs = [
-  '-f', 'concat',
-  '-safe', '0',
-  '-i', CONCAT_FILE,
+  '-y',
+  ...inputs,
   ...(hasAudio ? ['-i', AUDIO_PATH] : []),
   '-filter_complex_script', FILTER_FILE,
-  '-map', `[${outLabel}]`,
-  ...(hasAudio ? ['-map', '1:a:0', '-c:a', 'aac', '-b:a', '192k'] : []),
+  '-map', `[${outputStreamLabel}]`,
+  ...(hasAudio ? ['-map', `${audioInputIdx}:a:0`, '-c:a', 'aac', '-b:a', '192k'] : []),
   '-c:v', 'libx264',
   '-preset', preset,
-  '-crf', '17', // High quality crisp encoding
+  '-crf', '17',
   '-movflags', 'faststart',
   '-t', AUDIO_DURATION.toFixed(3),
-  '-y',
   OUTPUT_PATH,
   '-progress', 'pipe:1',
 ];
 
-console.log(`\n🎬 Starting native FFmpeg render with smooth digital pans & zooms (${outWidth}x${outHeight} @ ${fps}fps, CRF 17)${hasSubs ? ' + subtitles' : ''}...`);
+console.log(`\n🚀 Starting native FFmpeg render (${outWidth}x${outHeight} @ ${fps}fps, CRF 17)...`);
 
 await new Promise((resolvePromise, rejectPromise) => {
   const proc = spawn('ffmpeg', ffmpegArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -436,7 +474,6 @@ await new Promise((resolvePromise, rejectPromise) => {
 
   proc.on('close', (code) => {
     try {
-      if (existsSync(CONCAT_FILE)) unlinkSync(CONCAT_FILE);
       if (existsSync(FILTER_FILE)) unlinkSync(FILTER_FILE);
     } catch {}
 
@@ -451,7 +488,6 @@ await new Promise((resolvePromise, rejectPromise) => {
 
   proc.on('error', (err) => {
     try {
-      if (existsSync(CONCAT_FILE)) unlinkSync(CONCAT_FILE);
       if (existsSync(FILTER_FILE)) unlinkSync(FILTER_FILE);
     } catch {}
     rejectPromise(err);
