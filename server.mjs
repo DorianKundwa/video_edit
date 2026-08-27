@@ -88,22 +88,131 @@ function mime(fp) {
   }[ext] || 'application/octet-stream';
 }
 
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ Uncaught exception in server:', err?.message || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('⚠️ Unhandled promise rejection in server:', reason);
+});
+
 function json(res, data, status = 200) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(data));
 }
 
+function streamFileWithRange(req, res, filePath, contentType) {
+  try {
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('File not found');
+      return;
+    }
+
+    const stat = fs.statSync(filePath);
+    const totalSize = stat.size;
+    const type = contentType || mime(filePath);
+
+    if (totalSize === 0) {
+      res.writeHead(200, {
+        'Content-Type': type,
+        'Content-Length': 0,
+        'Accept-Ranges': 'bytes',
+      });
+      res.end();
+      return;
+    }
+
+    const range = req.headers.range;
+    if (range) {
+      const match = range.match(/bytes=(\d*)-(\d*)/);
+      if (!match) {
+        res.writeHead(416, {
+          'Content-Range': `bytes */${totalSize}`,
+          'Content-Type': 'text/plain; charset=utf-8',
+        });
+        res.end('Requested Range Not Satisfiable');
+        return;
+      }
+
+      let start = match[1] ? parseInt(match[1], 10) : 0;
+      let end = match[2] ? parseInt(match[2], 10) : totalSize - 1;
+
+      if (!match[1] && match[2]) {
+        const suffix = parseInt(match[2], 10);
+        start = Math.max(0, totalSize - suffix);
+        end = totalSize - 1;
+      }
+
+      if (isNaN(start) || isNaN(end) || start >= totalSize || start > end) {
+        res.writeHead(416, {
+          'Content-Range': `bytes */${totalSize}`,
+          'Content-Type': 'text/plain; charset=utf-8',
+        });
+        res.end('Requested Range Not Satisfiable');
+        return;
+      }
+
+      end = Math.min(end, totalSize - 1);
+      const chunkSize = end - start + 1;
+
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': type,
+        'Cache-Control': 'no-cache',
+      });
+
+      const stream = fs.createReadStream(filePath, { start, end });
+      stream.on('error', () => {
+        if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end();
+      });
+      res.on('close', () => stream.destroy());
+      stream.pipe(res);
+    } else {
+      res.writeHead(200, {
+        'Content-Length': totalSize,
+        'Content-Type': type,
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600',
+      });
+      const stream = fs.createReadStream(filePath);
+      stream.on('error', () => {
+        if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end();
+      });
+      res.on('close', () => stream.destroy());
+      stream.pipe(res);
+    }
+  } catch (err) {
+    if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('Server error');
+  }
+}
+
 function serveFile(res, filePath) {
   try {
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not found');
+      return;
+    }
     const stat = fs.statSync(filePath);
     res.writeHead(200, {
       'Content-Type': mime(filePath),
       'Content-Length': stat.size,
       'Cache-Control': 'public, max-age=3600',
     });
-    fs.createReadStream(filePath).pipe(res);
+    const stream = fs.createReadStream(filePath);
+    stream.on('error', () => {
+      if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end();
+    });
+    res.on('close', () => stream.destroy());
+    stream.pipe(res);
   } catch {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    if (!res.headersSent) res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not found');
   }
 }
@@ -168,6 +277,7 @@ const server = http.createServer((req, res) => {
     const audio = getAudioInfo(AUDIO_PATH);
     const outputExists = fs.existsSync(OUTPUT_PATH);
     const outputStat = outputExists ? fs.statSync(OUTPUT_PATH) : null;
+    const outputValid = outputStat && outputStat.size > 0;
     const subtitleExists = fs.existsSync(SUBTITLE_PATH);
     const subtitleStat = subtitleExists ? fs.statSync(SUBTITLE_PATH) : null;
     let subtitleEntries = null;
@@ -178,7 +288,7 @@ const server = http.createServer((req, res) => {
     }
     return json(res, {
       audio,
-      output: outputExists ? { size: outputStat.size, mtime: outputStat.mtime } : null,
+      output: outputValid ? { size: outputStat.size, mtime: outputStat.mtime } : null,
       subtitle: subtitleExists ? { name: 'subtitles.srt', size: subtitleStat.size, entries: subtitleEntries } : null,
       isGenerating,
     });
@@ -526,34 +636,12 @@ const server = http.createServer((req, res) => {
 
   // ── GET /output.mp4 (with full HTTP range support for video player) ─────────
   if (path_ === '/output.mp4' && req.method === 'GET') {
-    if (!fs.existsSync(OUTPUT_PATH)) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
+    if (!fs.existsSync(OUTPUT_PATH) || fs.statSync(OUTPUT_PATH).size === 0) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Output video not found');
       return;
     }
-    const stat = fs.statSync(OUTPUT_PATH);
-    const range = req.headers.range;
-    if (range) {
-      const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end   = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
-      const chunksize = end - start + 1;
-      res.writeHead(206, {
-        'Content-Range':  `bytes ${start}-${end}/${stat.size}`,
-        'Accept-Ranges':  'bytes',
-        'Content-Length': chunksize,
-        'Content-Type':   'video/mp4',
-      });
-      fs.createReadStream(OUTPUT_PATH, { start, end }).pipe(res);
-    } else {
-      res.writeHead(200, {
-        'Content-Length': stat.size,
-        'Content-Type':   'video/mp4',
-        'Accept-Ranges':  'bytes',
-      });
-      fs.createReadStream(OUTPUT_PATH).pipe(res);
-    }
-    return;
+    return streamFileWithRange(req, res, OUTPUT_PATH, 'video/mp4');
   }
 
   // ── Serve image files ─────────────────────────────────────────────────────────
@@ -567,7 +655,7 @@ const server = http.createServer((req, res) => {
   if (path_.startsWith('/audio/')) {
     const rel = decodeURIComponent(path_.slice('/audio/'.length));
     const fullPath = path.join(AUDIO_DIR, rel);
-    return serveFile(res, fullPath);
+    return streamFileWithRange(req, res, fullPath, mime(fullPath));
   }
 
   // ── Serve subtitle files ─────────────────────────────────────────────────────

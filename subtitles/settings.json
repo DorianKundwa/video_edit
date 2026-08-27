@@ -1,14 +1,17 @@
 {
-  "fontName": "Impact",
-  "fontSize": 54,
+  "fontName": "Inter",
+  "fontSize": 39,
   "bold": true,
-  "italic": false,
-  "uppercase": true,
-  "primaryColor": "#FFD700",
+  "italic": true,
+  "uppercase": false,
+  "primaryColor": "#dedede",
   "outlineColor": "#000000",
-  "outlineWidth": 4,
-  "borderStyle": 1,
+  "outlineWidth": 2,
   "alignment": 2,
   "marginV": 50,
-  "fadeInMs": 200
+  "fadeInMs": 200,
+  "shadowDepth": 1,
+  "backColor": "#000000",
+  "backAlpha": "99",
+  "borderStyle": 1
 }

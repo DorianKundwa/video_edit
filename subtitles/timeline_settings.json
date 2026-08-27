@@ -1,11 +1,477 @@
 {
+  "globalTransition": "fade",
+  "transitionDuration": 0.3,
   "motionMode": "ken-burns",
-  "globalTransition": "wipeleft",
-  "transitionDuration": 0.8,
   "clipOverrides": {
     "[0-00]_Hand-drawn_2D_dood.jpg": {
-      "transition": "circlecrop",
-      "motion": "zoom-in"
+      "transition": "fade",
+      "motion": "zoom-in",
+      "transitionDuration": 0.8
+    },
+    "[0-15]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-01]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-06]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-17]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-21]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-24]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-28]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-37]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-41]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-47]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-52]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-56]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[0-57]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-00]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-05]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-08]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-15]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-17]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-23]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-31]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-36]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-41]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-46]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[1-52]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-02]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-04]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-09]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-20]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-21]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-27]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-31]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-38]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-46]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-49]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[2-51]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-02]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-05]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-12]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-20]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-28]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-31]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-37]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-47]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-50]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-52]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-54]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[3-55]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-00]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-08]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-10]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-19]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-23]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-29]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-34]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-40]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-46]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-50]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-52]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-54]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[4-58]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-08]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-12]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-14]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-20]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-26]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-27]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-30]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-33]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-34]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-37]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-41]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-44]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-50]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[5-55]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-00]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-07]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-09]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-15]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-18]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-30]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-37]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-40]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-42]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-48]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[6-53]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[7-06]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[7-11]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[7-13]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[7-21]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[7-28]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[7-31]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[7-36]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
+    },
+    "[7-45]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in",
+      "transition": "fade",
+      "transitionDuration": 0.8
     }
   }
 }

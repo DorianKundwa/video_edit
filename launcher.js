@@ -7,7 +7,15 @@ const { get }   = require('http');
 const { exec }  = require('child_process');
 const path      = require('path');
 
-const PROJECT_DIR = path.dirname(process.execPath);
+const isNode = path.basename(process.execPath).toLowerCase().startsWith('node');
+const PROJECT_DIR = isNode ? __dirname : path.dirname(process.execPath);
+
+process.on('uncaughtException', (err) => {
+  console.error('\n  ❌  Launcher error:', err?.message || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('\n  ❌  Unhandled rejection:', reason);
+});
 
 // Set terminal title
 try { process.stdout.write('\x1b]0;Video Edit Studio\x07'); } catch {}
@@ -55,7 +63,7 @@ server.on('error', err => {
 });
 
 server.on('exit', code => {
-  if (code !== 0) console.log(`\n  Server stopped (exit code ${code})`);
+  if (code !== 0) console.log(`\n  ❌ Server stopped (exit code ${code})`);
   process.exit(code || 0);
 });
 
