@@ -285,9 +285,13 @@ function buildClipFilter(clipIdx, effectName, totalFrames, clipFps, width, heigh
   // setsar=1 normalises pixel-aspect-ratio so zoompan never sees non-square SAR,
   // which is the root cause of "Error reinitializing filters / Invalid argument".
   const prepChain = `scale=${BASE_W}:${BASE_H}:force_original_aspect_ratio=increase,crop=${BASE_W}:${BASE_H},setsar=1`;
+  // settb normalises every clip's output timebase to 1/fps.
+  // Without this, MJPEG inputs (timebase 1/1000000) clash with zoompan outputs
+  // (timebase 1/fps) the moment two streams meet at a concat or xfade filter.
+  const tbNorm = `settb=1/${clipFps}`;
 
   if (isStatic || effectName === 'static') {
-    return `[${clipIdx}:v]${prepChain},zoompan=z=1.0:x=0:y=0:d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS[v${clipIdx}];\n`;
+    return `[${clipIdx}:v]${prepChain},zoompan=z=1.0:x=0:y=0:d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS,${tbNorm}[v${clipIdx}];\n`;
   }
 
   const d = safeFrames;
@@ -329,7 +333,7 @@ function buildClipFilter(clipIdx, effectName, totalFrames, clipFps, width, heigh
       break;
   }
 
-  return `[${clipIdx}:v]${prepChain},zoompan=${zpExpr}:d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS[v${clipIdx}];\n`;
+  return `[${clipIdx}:v]${prepChain},zoompan=${zpExpr}:d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS,${tbNorm}[v${clipIdx}];\n`;
 }
 
 // ── 6. Assemble Complex Filter Graph with Transitions ─────────────────────────
