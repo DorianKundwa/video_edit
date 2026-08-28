@@ -279,11 +279,18 @@ const BASE_W = 2560;
 const BASE_H = 1440;
 
 function buildClipFilter(clipIdx, effectName, totalFrames, clipFps, width, height) {
+  // Minimum 2 frames ensures zoompan filter always has enough data to initialise
+  const safeFrames = Math.max(2, totalFrames);
+
+  // setsar=1 normalises pixel-aspect-ratio so zoompan never sees non-square SAR,
+  // which is the root cause of "Error reinitializing filters / Invalid argument".
+  const prepChain = `scale=${BASE_W}:${BASE_H}:force_original_aspect_ratio=increase,crop=${BASE_W}:${BASE_H},setsar=1`;
+
   if (isStatic || effectName === 'static') {
-    return `[${clipIdx}:v]scale=${BASE_W}:${BASE_H}:force_original_aspect_ratio=increase,crop=${BASE_W}:${BASE_H},zoompan=z=1.0:x=0:y=0:d=${totalFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS[v${clipIdx}];\n`;
+    return `[${clipIdx}:v]${prepChain},zoompan=z=1.0:x=0:y=0:d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS[v${clipIdx}];\n`;
   }
 
-  const d = Math.max(1, totalFrames);
+  const d = safeFrames;
   const zoomInRate = (0.12 / d).toFixed(6);
   const pushInRate = (0.20 / d).toFixed(6);
 
@@ -322,7 +329,7 @@ function buildClipFilter(clipIdx, effectName, totalFrames, clipFps, width, heigh
       break;
   }
 
-  return `[${clipIdx}:v]scale=${BASE_W}:${BASE_H}:force_original_aspect_ratio=increase,crop=${BASE_W}:${BASE_H},zoompan=${zpExpr}:d=${totalFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS[v${clipIdx}];\n`;
+  return `[${clipIdx}:v]${prepChain},zoompan=${zpExpr}:d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS[v${clipIdx}];\n`;
 }
 
 // ── 6. Assemble Complex Filter Graph with Transitions ─────────────────────────
@@ -361,10 +368,11 @@ for (let i = 0; i < clipData.length; i++) {
   const c = clipData[i];
   const nextTransDur = i < clipData.length - 1 ? clipData[i].transDur : 0;
   const clipRenderDuration = c.durationSec + nextTransDur;
-  const totalFrames = Math.max(1, Math.round(clipRenderDuration * fps));
+  const totalFrames = Math.max(2, Math.round(clipRenderDuration * fps));
 
   const imgPath = resolve(IMAGE_DIR, c.name).replace(/\\/g, '/');
-  inputs.push('-i', imgPath);
+  // -thread_queue_size prevents frame-injection bottlenecks with many image inputs
+  inputs.push('-thread_queue_size', '512', '-i', imgPath);
 
   filterGraph += buildClipFilter(i, c.effect, totalFrames, fps, outWidth, outHeight);
 }
