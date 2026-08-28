@@ -364,6 +364,7 @@ const clipData = images.map((img, i) => {
 
 // Calculate total frames required for each clip
 // If clip i transitions into clip i+1 with transition duration T, clip i needs an extra T seconds of rendered frames so xfade can blend
+let imageInputCount = 0;
 for (let i = 0; i < clipData.length; i++) {
   const c = clipData[i];
   const nextTransDur = i < clipData.length - 1 ? clipData[i].transDur : 0;
@@ -371,8 +372,8 @@ for (let i = 0; i < clipData.length; i++) {
   const totalFrames = Math.max(2, Math.round(clipRenderDuration * fps));
 
   const imgPath = resolve(IMAGE_DIR, c.name).replace(/\\/g, '/');
-  // -thread_queue_size prevents frame-injection bottlenecks with many image inputs
-  inputs.push('-thread_queue_size', '512', '-i', imgPath);
+  inputs.push('-i', imgPath);
+  imageInputCount++;
 
   filterGraph += buildClipFilter(i, c.effect, totalFrames, fps, outWidth, outHeight);
 }
@@ -427,7 +428,9 @@ writeFileSync(FILTER_FILE, filterGraph, 'utf-8');
 
 // ── 7. Execute Native FFmpeg Render ──────────────────────────────────────────
 const hasAudio = existsSync(AUDIO_PATH);
-const audioInputIdx = inputs.length / 2;
+// imageInputCount tracks the exact number of -i flags used for images,
+// so the audio stream index is always correct regardless of other flags.
+const audioInputIdx = imageInputCount;
 const ffmpegArgs = [
   '-y',
   ...inputs,
@@ -473,11 +476,9 @@ await new Promise((resolvePromise, rejectPromise) => {
     }
   });
 
+  let stderrBuf = '';
   proc.stderr.on('data', (chunk) => {
-    const msg = chunk.toString();
-    if (msg.includes('Error') || msg.includes('fatal')) {
-      console.error(msg);
-    }
+    stderrBuf += chunk.toString();
   });
 
   proc.on('close', (code) => {
@@ -490,6 +491,9 @@ await new Promise((resolvePromise, rejectPromise) => {
       console.log(`\n✅ Done! Video saved to: ${OUTPUT_PATH}`);
       resolvePromise();
     } else {
+      // Always print full FFmpeg stderr on failure so the error is visible
+      console.error('\n🔴 FFmpeg stderr output:\n');
+      console.error(stderrBuf);
       rejectPromise(new Error(`FFmpeg exited with code ${code}`));
     }
   });
