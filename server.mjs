@@ -259,7 +259,7 @@ const server = http.createServer((req, res) => {
 
       const images = rawImages.map((img, i) => {
         const nextStart = i < rawImages.length - 1 ? rawImages[i + 1].timestamp.total : totalAudioSec;
-        const durationSec = Math.max(0.1, nextStart - img.timestamp.total);
+        const durationSec = Math.max(i < rawImages.length - 1 ? 0.1 : 3.0, nextStart - img.timestamp.total);
         return {
           ...img,
           durationSec: parseFloat(durationSec.toFixed(1)),
@@ -499,6 +499,13 @@ const server = http.createServer((req, res) => {
       }
     });
 
+    activeProc.on('error', (err) => {
+      isGenerating = false;
+      activeProc   = null;
+      send({ type: 'error', message: `❌ Process spawn error: ${err.message}` });
+      res.end();
+    });
+
     activeProc.on('close', (code) => {
       isGenerating = false;
       activeProc   = null;
@@ -601,6 +608,13 @@ const server = http.createServer((req, res) => {
 
     activeProc.stdout.on('data', handleTChunk);
     activeProc.stderr.on('data', handleTChunk);
+
+    activeProc.on('error', (err) => {
+      isGenerating = false;
+      activeProc   = null;
+      send({ type: 'error', message: `❌ Transcription process error: ${err.message}` });
+      res.end();
+    });
 
     activeProc.on('close', (code) => {
       isGenerating = false;

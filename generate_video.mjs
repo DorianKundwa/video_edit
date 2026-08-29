@@ -37,7 +37,7 @@ const cliTransDur = transDurArg ? parseFloat(transDurArg.slice('--transition-dur
 
 // ── 1. Audio Duration Check ──────────────────────────────────────────────────
 function getAudioDuration(filePath) {
-  if (!existsSync(filePath)) return 600;
+  if (!existsSync(filePath)) return null;
   try {
     const stdout = execSync(
       `ffprobe -v quiet -print_format json -show_format "${filePath}"`,
@@ -50,10 +50,8 @@ function getAudioDuration(filePath) {
   } catch (e) {
     console.warn('ffprobe duration check failed, using fallback:', e.message);
   }
-  return 600;
+  return null;
 }
-
-const AUDIO_DURATION = getAudioDuration(AUDIO_PATH);
 
 // ── 2. Collect & Sort Images ─────────────────────────────────────────────────
 function parseTimestamp(filename) {
@@ -80,10 +78,14 @@ if (rawImages.length === 0) {
   process.exit(1);
 }
 
+const detectedAudioDur = getAudioDuration(AUDIO_PATH);
+const fallbackTotalDuration = (rawImages.at(-1)?.startSec || 0) + 5;
+const AUDIO_DURATION = detectedAudioDur || fallbackTotalDuration;
+
 // Compute each clip's duration
 const images = rawImages.map((img, i) => {
   const nextStart = i < rawImages.length - 1 ? rawImages[i + 1].startSec : AUDIO_DURATION;
-  const durationSec = Math.max(0.1, nextStart - img.startSec);
+  const durationSec = Math.max(i < rawImages.length - 1 ? 0.1 : 3.0, nextStart - img.startSec);
   return {
     ...img,
     durationSec: parseFloat(durationSec.toFixed(2)),
@@ -227,7 +229,7 @@ function secToAssTime(sec) {
   const m  = Math.floor((sec % 3600) / 60);
   const s  = Math.floor(sec % 60);
   const cs = Math.round((sec % 1) * 100);
-  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '00')}`;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
 }
 
 function buildAssFile(entries, width, height, subSettings = {}, resScale = 1.0) {
@@ -275,8 +277,8 @@ function buildAssFile(entries, width, height, subSettings = {}, resScale = 1.0) 
 
 // ── 5. Build Subpixel Smooth Ken Burns Filter for a Single Clip ─────────────
 // High internal base resolution prevents any discrete integer rounding jumps or vibration.
-const BASE_W = 2560;
-const BASE_H = 1440;
+const BASE_W = Math.max(2560, Math.round(outWidth * 1.35));
+const BASE_H = Math.max(1440, Math.round(outHeight * 1.35));
 
 function buildClipFilter(clipIdx, effectName, totalFrames, clipFps, width, height) {
   // Minimum 2 frames ensures zoompan filter always has enough data to initialise
@@ -291,45 +293,44 @@ function buildClipFilter(clipIdx, effectName, totalFrames, clipFps, width, heigh
   const tbNorm = `settb=1/${clipFps}`;
 
   if (isStatic || effectName === 'static') {
-    return `[${clipIdx}:v]${prepChain},zoompan=z=1.0:x=0:y=0:d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS,${tbNorm}[v${clipIdx}];\n`;
+    return `[${clipIdx}:v]${prepChain},zoompan=z=1.0:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS,${tbNorm}[v${clipIdx}];\n`;
   }
 
   const d = safeFrames;
-  const zoomInRate = (0.12 / d).toFixed(6);
-  const pushInRate = (0.20 / d).toFixed(6);
 
+  // Zero-jitter absolute on-based formula: each frame evaluates independently without feedback loop or rounding drift
   let zpExpr;
   switch (effectName) {
     case 'zoom-out':
-      zpExpr = `z='max(1.14-${zoomInRate}*on,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
+      zpExpr = `z='max(1.14-0.14*(on/${d}),1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
       break;
     case 'pan-left':
-      zpExpr = `z=1.12:x='max(0, (iw-iw/zoom)*(1-on/${d}))':y='ih/2-(ih/zoom/2)'`;
+      zpExpr = `z=1.12:x='max(0,(iw-iw/zoom)*(1-on/${d}))':y='ih/2-(ih/zoom/2)'`;
       break;
     case 'pan-right':
-      zpExpr = `z=1.12:x='min(iw-iw/zoom, (iw-iw/zoom)*(on/${d}))':y='ih/2-(ih/zoom/2)'`;
+      zpExpr = `z=1.12:x='min(iw-iw/zoom,(iw-iw/zoom)*(on/${d}))':y='ih/2-(ih/zoom/2)'`;
       break;
     case 'pan-up':
-      zpExpr = `z=1.12:x='iw/2-(iw/zoom/2)':y='max(0, (ih-ih/zoom)*(1-on/${d}))'`;
+      zpExpr = `z=1.12:x='iw/2-(iw/zoom/2)':y='max(0,(ih-ih/zoom)*(1-on/${d}))'`;
       break;
     case 'pan-down':
-      zpExpr = `z=1.12:x='iw/2-(iw/zoom/2)':y='min(ih-ih/zoom, (ih-ih/zoom)*(on/${d}))'`;
+      zpExpr = `z=1.12:x='iw/2-(iw/zoom/2)':y='min(ih-ih/zoom,(ih-ih/zoom)*(on/${d}))'`;
       break;
     case 'diag-tl':
-      zpExpr = `z='min(zoom+${(0.06/d).toFixed(6)},1.12)':x='max(0, (iw-iw/zoom)*(1-on/${d}))':y='max(0, (ih-ih/zoom)*(1-on/${d}))'`;
+      zpExpr = `z='min(1.0+0.08*(on/${d}),1.08)':x='max(0,(iw-iw/zoom)*(1-on/${d}))':y='max(0,(ih-ih/zoom)*(1-on/${d}))'`;
       break;
     case 'diag-br':
-      zpExpr = `z='min(zoom+${(0.06/d).toFixed(6)},1.12)':x='min(iw-iw/zoom, (iw-iw/zoom)*(on/${d}))':y='min(ih-ih/zoom, (ih-ih/zoom)*(on/${d}))'`;
+      zpExpr = `z='min(1.0+0.08*(on/${d}),1.08)':x='min(iw-iw/zoom,(iw-iw/zoom)*(on/${d}))':y='min(ih-ih/zoom,(ih-ih/zoom)*(on/${d}))'`;
       break;
     case 'push-in':
-      zpExpr = `z='min(zoom+${pushInRate},1.22)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
+      zpExpr = `z='min(1.0+0.22*(on/${d}),1.22)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
       break;
     case 'pull-out':
-      zpExpr = `z='max(1.22-${pushInRate}*on,1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
+      zpExpr = `z='max(1.22-0.22*(on/${d}),1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
       break;
     case 'zoom-in':
     default:
-      zpExpr = `z='min(zoom+${zoomInRate},1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
+      zpExpr = `z='min(1.0+0.14*(on/${d}),1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
       break;
   }
 

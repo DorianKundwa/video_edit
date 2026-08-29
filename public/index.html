@@ -2275,11 +2275,26 @@
   // ── Real-Time Live Studio Player Engine ────────────────────────────────────
   let liveAnimFrameId = null;
   let isLivePlaying = false;
+  let livePlaybackStartTime = 0;
+  let livePlaybackStartSec = 0;
   const audioEl = document.getElementById('audioElement');
+  const preloadedImages = new Map();
+
+  function preloadImages(images) {
+    images.forEach(img => {
+      if (!preloadedImages.has(img.name)) {
+        const imageObj = new Image();
+        imageObj.src = `/image/${encodeURIComponent(img.name)}`;
+        preloadedImages.set(img.name, imageObj);
+      }
+    });
+  }
 
   function initLiveStage() {
     if (allImages.length > 0) {
+      preloadImages(allImages);
       updateLiveSlide(0);
+      applyLiveSubtitleStyles();
     }
   }
 
@@ -2292,9 +2307,19 @@
   }
 
   function startLivePlayback() {
-    if (!audioEl.src && allImages.length === 0) return;
+    if (allImages.length === 0) return;
     isLivePlaying = true;
-    audioEl.play().catch(() => {});
+    
+    const currentSec = audioEl.src && !isNaN(audioEl.currentTime) ? audioEl.currentTime : livePlaybackStartSec;
+    livePlaybackStartTime = performance.now();
+    livePlaybackStartSec = currentSec;
+
+    if (audioEl.src && audioEl.src !== window.location.href) {
+      audioEl.play().catch(() => {
+        // Fallback to wall-clock time if audio play is blocked or unavailable
+      });
+    }
+
     document.getElementById('livePlayBtn').textContent = '⏸';
     document.getElementById('audioPlayBtn').textContent = '⏸';
     liveRenderLoop();
@@ -2302,7 +2327,7 @@
 
   function pauseLivePlayback() {
     isLivePlaying = false;
-    audioEl.pause();
+    if (audioEl.src) audioEl.pause();
     document.getElementById('livePlayBtn').textContent = '▶';
     document.getElementById('audioPlayBtn').textContent = '▶';
     if (liveAnimFrameId) cancelAnimationFrame(liveAnimFrameId);
@@ -2310,8 +2335,25 @@
 
   function liveRenderLoop() {
     if (!isLivePlaying) return;
-    const t = audioEl.currentTime || 0;
-    updateLivePlayerState(t);
+
+    const totalDur = audioEl.duration || (allImages.at(-1)?.timestamp.total + 5);
+    let currentSec = 0;
+
+    if (audioEl.src && !audioEl.paused && !isNaN(audioEl.currentTime)) {
+      currentSec = audioEl.currentTime;
+      livePlaybackStartSec = currentSec;
+      livePlaybackStartTime = performance.now();
+    } else {
+      const elapsed = (performance.now() - livePlaybackStartTime) / 1000;
+      currentSec = Math.min(totalDur, livePlaybackStartSec + elapsed);
+      if (currentSec >= totalDur) {
+        pauseLivePlayback();
+        updateLivePlayerState(totalDur);
+        return;
+      }
+    }
+
+    updateLivePlayerState(currentSec);
     liveAnimFrameId = requestAnimationFrame(liveRenderLoop);
   }
 
@@ -2346,7 +2388,7 @@
     // Update timecode and progress
     const totalDur = audioEl.duration || (allImages.at(-1)?.timestamp.total + 5);
     document.getElementById('liveTimecode').textContent = `${formatTime(currentSec)} / ${formatTime(totalDur)}`;
-    const pct = (currentSec / totalDur) * 100;
+    const pct = totalDur > 0 ? (currentSec / totalDur) * 100 : 0;
     document.getElementById('liveProgressFill').style.width = pct + '%';
     document.getElementById('audioProgress').style.width = pct + '%';
     document.getElementById('audioCurrentTime').textContent = formatTime(currentSec);
@@ -2361,6 +2403,16 @@
 
     fg.style.backgroundImage = `url("${imgUrl}")`;
     bg.style.backgroundImage = `url("${imgUrl}")`;
+
+    // Preload next 2 slides for zero-stutter transitions
+    for (let n = 1; n <= 2; n++) {
+      const nextClip = allImages[clipIdx + n];
+      if (nextClip && !preloadedImages.has(nextClip.name)) {
+        const nextImg = new Image();
+        nextImg.src = `/image/${encodeURIComponent(nextClip.name)}`;
+        preloadedImages.set(nextClip.name, nextImg);
+      }
+    }
   }
 
   function applyLiveMotionTransform(clipIdx, p) {
@@ -2412,20 +2464,46 @@
         break;
       case 'diag-tl':
         scale = 1.0 + 0.08 * p;
-        tx = (1 - p) * 15;
-        ty = (1 - p) * 15;
+        tx = (1 - 2 * p) * 15;
+        ty = (1 - 2 * p) * 15;
         break;
       case 'diag-br':
         scale = 1.0 + 0.08 * p;
-        tx = -(1 - p) * 15;
-        ty = -(1 - p) * 15;
+        tx = (-1 + 2 * p) * 15;
+        ty = (-1 + 2 * p) * 15;
         break;
       default:
-        scale = 1.0 + 0.12 * p;
+        scale = 1.0 + 0.14 * p;
         break;
     }
 
     fg.style.transform = `scale(${scale.toFixed(4)}) translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px)`;
+  }
+
+  function applyLiveSubtitleStyles() {
+    const subTextEl = document.getElementById('liveSubText');
+    if (!subTextEl) return;
+
+    const s = currentSubSettings;
+    subTextEl.style.fontFamily = `'${s.fontName || 'Inter'}', sans-serif`;
+    subTextEl.style.fontSize = `${Math.round((s.fontSize || 42) * 0.45)}px`;
+    subTextEl.style.fontWeight = s.bold ? '800' : '600';
+    subTextEl.style.fontStyle = s.italic ? 'italic' : 'normal';
+    subTextEl.style.color = s.primaryColor || '#FFFFFF';
+    
+    const strokeW = s.outlineWidth ?? 2.5;
+    const strokeC = s.outlineColor || '#000000';
+    if (strokeW > 0) {
+      subTextEl.style.textShadow = `
+        -${strokeW}px -${strokeW}px 0 ${strokeC},
+         ${strokeW}px -${strokeW}px 0 ${strokeC},
+        -${strokeW}px  ${strokeW}px 0 ${strokeC},
+         ${strokeW}px  ${strokeW}px 0 ${strokeC},
+         0 2px 8px rgba(0,0,0,0.8)
+      `;
+    } else {
+      subTextEl.style.textShadow = '0 2px 8px rgba(0,0,0,0.8)';
+    }
   }
 
   function updateLiveSubtitleOverlay(currentSec) {
@@ -2473,24 +2551,34 @@
   function seekLiveToClip(clipIdx) {
     const clip = allImages[clipIdx];
     if (clip) {
-      audioEl.currentTime = clip.timestamp.total;
-      updateLivePlayerState(clip.timestamp.total);
+      const sec = clip.timestamp.total;
+      livePlaybackStartSec = sec;
+      livePlaybackStartTime = performance.now();
+      if (audioEl.src) audioEl.currentTime = sec;
+      updateLivePlayerState(sec);
     }
   }
 
   function seekLiveTimeline(e) {
     const scrubber = document.getElementById('liveScrubber');
     const rect = scrubber.getBoundingClientRect();
-    const pos = (e.clientX - rect.left) / rect.width;
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const totalDur = audioEl.duration || (allImages.at(-1)?.timestamp.total + 5);
-    audioEl.currentTime = pos * totalDur;
-    updateLivePlayerState(audioEl.currentTime);
+    const targetSec = pos * totalDur;
+    livePlaybackStartSec = targetSec;
+    livePlaybackStartTime = performance.now();
+    if (audioEl.src) audioEl.currentTime = targetSec;
+    updateLivePlayerState(targetSec);
   }
 
   function seekLiveDelta(sec) {
     const totalDur = audioEl.duration || (allImages.at(-1)?.timestamp.total + 5);
-    audioEl.currentTime = Math.max(0, Math.min(totalDur, (audioEl.currentTime || 0) + sec));
-    updateLivePlayerState(audioEl.currentTime);
+    const current = audioEl.src && !isNaN(audioEl.currentTime) ? audioEl.currentTime : livePlaybackStartSec;
+    const target = Math.max(0, Math.min(totalDur, current + sec));
+    livePlaybackStartSec = target;
+    livePlaybackStartTime = performance.now();
+    if (audioEl.src) audioEl.currentTime = target;
+    updateLivePlayerState(target);
   }
 
   function toggleViewMode(mode) {
@@ -2520,10 +2608,13 @@
   function seekAudio(e) {
     const scrubber = document.getElementById('audioScrubber');
     const rect = scrubber.getBoundingClientRect();
-    const pos = (e.clientX - rect.left) / rect.width;
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     if (audioEl.duration) {
-      audioEl.currentTime = pos * audioEl.duration;
-      updateLivePlayerState(audioEl.currentTime);
+      const targetSec = pos * audioEl.duration;
+      livePlaybackStartSec = targetSec;
+      livePlaybackStartTime = performance.now();
+      audioEl.currentTime = targetSec;
+      updateLivePlayerState(targetSec);
     }
   }
 
@@ -2854,7 +2945,10 @@
     document.getElementById('subtitleModal').classList.add('open');
   }
 
-  function closeSubtitleModal() { document.getElementById('subtitleModal').classList.remove('open'); }
+  function closeSubtitleModal(e) {
+    if (e && e.target && e.target !== document.getElementById('subtitleModal')) return;
+    document.getElementById('subtitleModal').classList.remove('open');
+  }
 
   async function saveSubtitleEdits() {
     let srtText = '';
@@ -2879,6 +2973,7 @@
         const data = await res.json();
         currentSubSettings = { ...currentSubSettings, ...data };
         syncSubtitleFormInputs();
+        applyLiveSubtitleStyles();
       }
     } catch {}
   }
@@ -2889,7 +2984,10 @@
     document.getElementById('subtitleStyleModal').classList.add('open');
   }
 
-  function closeSubtitleStyleModal() { document.getElementById('subtitleStyleModal').classList.remove('open'); }
+  function closeSubtitleStyleModal(e) {
+    if (e && e.target && e.target !== document.getElementById('subtitleStyleModal')) return;
+    document.getElementById('subtitleStyleModal').classList.remove('open');
+  }
 
   function syncSubtitleFormInputs() {
     const s = currentSubSettings;
@@ -2911,12 +3009,14 @@
     currentSubSettings.primaryColor = document.getElementById('subPrimaryColor').value;
     currentSubSettings.outlineColor = document.getElementById('subOutlineColor').value;
     currentSubSettings.outlineWidth = parseFloat(document.getElementById('subOutlineWidth').value);
+    applyLiveSubtitleStyles();
   }
 
   function toggleSubStyle(prop) {
     currentSubSettings[prop] = !currentSubSettings[prop];
     document.getElementById(prop === 'bold' ? 'subBoldBtn' : prop === 'italic' ? 'subItalicBtn' : 'subUpperBtn')
       .classList.toggle('active', !!currentSubSettings[prop]);
+    applyLiveSubtitleStyles();
   }
 
   async function saveSubtitleSettings() {
@@ -2925,6 +3025,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(currentSubSettings),
     });
+    applyLiveSubtitleStyles();
     showToast('Subtitle styles saved & applied!', 'success');
     closeSubtitleStyleModal();
   }
@@ -2940,20 +3041,28 @@
     document.getElementById('lightboxModal').classList.add('open');
   }
 
-  function closeLightboxModal() { document.getElementById('lightboxModal').classList.remove('open'); }
+  function closeLightboxModal(e) {
+    if (e && e.target && e.target !== document.getElementById('lightboxModal')) return;
+    document.getElementById('lightboxModal').classList.remove('open');
+  }
 
   function jumpToCurrentLightboxClip() {
     if (activeLightboxImg) {
       const parts = activeLightboxImg.tsLabel.split(':').map(Number);
       const sec = parts[0] * 60 + (parts[1] || 0);
-      audioEl.currentTime = sec;
+      livePlaybackStartSec = sec;
+      livePlaybackStartTime = performance.now();
+      if (audioEl.src) audioEl.currentTime = sec;
       updateLivePlayerState(sec);
       closeLightboxModal();
     }
   }
 
   function openShortcutsModal() { document.getElementById('shortcutsModal').classList.add('open'); }
-  function closeShortcutsModal() { document.getElementById('shortcutsModal').classList.remove('open'); }
+  function closeShortcutsModal(e) {
+    if (e && e.target && e.target !== document.getElementById('shortcutsModal')) return;
+    document.getElementById('shortcutsModal').classList.remove('open');
+  }
 
   // Global Keyboard Shortcuts
   window.addEventListener('keydown', (e) => {
