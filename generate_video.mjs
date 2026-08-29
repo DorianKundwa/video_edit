@@ -276,65 +276,89 @@ function buildAssFile(entries, width, height, subSettings = {}, resScale = 1.0) 
 }
 
 // ── 5. Build Subpixel Smooth Ken Burns Filter for a Single Clip ─────────────
-// High internal base resolution prevents any discrete integer rounding jumps or vibration.
-const BASE_W = Math.max(2560, Math.round(outWidth * 1.35));
-const BASE_H = Math.max(1440, Math.round(outHeight * 1.35));
+// Uses FFmpeg's continuous bicubic spline perspective interpolation engine (eval=frame).
+// Completely eliminates the discrete integer-boundary stair-stepping and shaking of the legacy zoompan filter.
 
 function buildClipFilter(clipIdx, effectName, totalFrames, clipFps, width, height) {
-  // Minimum 2 frames ensures zoompan filter always has enough data to initialise
   const safeFrames = Math.max(2, totalFrames);
-
-  // setsar=1 normalises pixel-aspect-ratio so zoompan never sees non-square SAR,
-  // which is the root cause of "Error reinitializing filters / Invalid argument".
-  const prepChain = `scale=${BASE_W}:${BASE_H}:force_original_aspect_ratio=increase,crop=${BASE_W}:${BASE_H},setsar=1`;
-  // settb normalises every clip's output timebase to 1/fps.
-  // Without this, MJPEG inputs (timebase 1/1000000) clash with zoompan outputs
-  // (timebase 1/fps) the moment two streams meet at a concat or xfade filter.
-  const tbNorm = `settb=1/${clipFps}`;
-
-  if (isStatic || effectName === 'static') {
-    return `[${clipIdx}:v]${prepChain},zoompan=z=1.0:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS,${tbNorm}[v${clipIdx}];\n`;
-  }
-
   const d = safeFrames;
 
-  // Zero-jitter absolute on-based formula: each frame evaluates independently without feedback loop or rounding drift
-  let zpExpr;
-  switch (effectName) {
-    case 'zoom-out':
-      zpExpr = `z='max(1.14-0.14*(on/${d}),1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
-      break;
-    case 'pan-left':
-      zpExpr = `z=1.12:x='max(0,(iw-iw/zoom)*(1-on/${d}))':y='ih/2-(ih/zoom/2)'`;
-      break;
-    case 'pan-right':
-      zpExpr = `z=1.12:x='min(iw-iw/zoom,(iw-iw/zoom)*(on/${d}))':y='ih/2-(ih/zoom/2)'`;
-      break;
-    case 'pan-up':
-      zpExpr = `z=1.12:x='iw/2-(iw/zoom/2)':y='max(0,(ih-ih/zoom)*(1-on/${d}))'`;
-      break;
-    case 'pan-down':
-      zpExpr = `z=1.12:x='iw/2-(iw/zoom/2)':y='min(ih-ih/zoom,(ih-ih/zoom)*(on/${d}))'`;
-      break;
-    case 'diag-tl':
-      zpExpr = `z='min(1.0+0.08*(on/${d}),1.08)':x='max(0,(iw-iw/zoom)*(1-on/${d}))':y='max(0,(ih-ih/zoom)*(1-on/${d}))'`;
-      break;
-    case 'diag-br':
-      zpExpr = `z='min(1.0+0.08*(on/${d}),1.08)':x='min(iw-iw/zoom,(iw-iw/zoom)*(on/${d}))':y='min(ih-ih/zoom,(ih-ih/zoom)*(on/${d}))'`;
-      break;
-    case 'push-in':
-      zpExpr = `z='min(1.0+0.22*(on/${d}),1.22)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
-      break;
-    case 'pull-out':
-      zpExpr = `z='max(1.22-0.22*(on/${d}),1.0)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
-      break;
-    case 'zoom-in':
-    default:
-      zpExpr = `z='min(1.0+0.14*(on/${d}),1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`;
-      break;
+  // loop=loop:size=1 produces exact frame stream; scale & crop normalises to canvas aspect ratio
+  const prepChain = `loop=loop=${safeFrames}:size=1:start=0,scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height},setsar=1,fps=${clipFps}`;
+  const tbNorm = `setpts=PTS-STARTPTS,settb=1/${clipFps}`;
+
+  if (isStatic || effectName === 'static') {
+    return `[${clipIdx}:v]${prepChain},${tbNorm}[v${clipIdx}];\n`;
   }
 
-  return `[${clipIdx}:v]${prepChain},zoompan=${zpExpr}:d=${safeFrames}:s=${width}x${height}:fps=${clipFps},setpts=PTS-STARTPTS,${tbNorm}[v${clipIdx}];\n`;
+  let perspExpr;
+  switch (effectName) {
+    case 'zoom-out': {
+      const z = `(1.14-0.14*on/${d})`;
+      perspExpr = `x0='(W/2)*(1-1/${z})':y0='(H/2)*(1-1/${z})':x1='W-(W/2)*(1-1/${z})':y1='(H/2)*(1-1/${z})':x2='(W/2)*(1-1/${z})':y2='H-(H/2)*(1-1/${z})':x3='W-(W/2)*(1-1/${z})':y3='H-(H/2)*(1-1/${z})'`;
+      break;
+    }
+    case 'pan-left': {
+      const z = 1.12;
+      const invZ = (1 / z).toFixed(6);
+      const rx = (1 - 1 / z).toFixed(6);
+      const my = ((1 - 1 / z) / 2).toFixed(6);
+      perspExpr = `x0='W*${rx}*(1-on/${d})':y0='H*${my}':x1='W*${rx}*(1-on/${d})+W*${invZ}':y1='H*${my}':x2='W*${rx}*(1-on/${d})':y2='H-H*${my}':x3='W*${rx}*(1-on/${d})+W*${invZ}':y3='H-H*${my}'`;
+      break;
+    }
+    case 'pan-right': {
+      const z = 1.12;
+      const invZ = (1 / z).toFixed(6);
+      const rx = (1 - 1 / z).toFixed(6);
+      const my = ((1 - 1 / z) / 2).toFixed(6);
+      perspExpr = `x0='W*${rx}*(on/${d})':y0='H*${my}':x1='W*${rx}*(on/${d})+W*${invZ}':y1='H*${my}':x2='W*${rx}*(on/${d})':y2='H-H*${my}':x3='W*${rx}*(on/${d})+W*${invZ}':y3='H-H*${my}'`;
+      break;
+    }
+    case 'pan-up': {
+      const z = 1.12;
+      const invZ = (1 / z).toFixed(6);
+      const mx = ((1 - 1 / z) / 2).toFixed(6);
+      const ry = (1 - 1 / z).toFixed(6);
+      perspExpr = `x0='W*${mx}':y0='H*${ry}*(1-on/${d})':x1='W-W*${mx}':y1='H*${ry}*(1-on/${d})':x2='W*${mx}':y2='H*${ry}*(1-on/${d})+H*${invZ}':x3='W-W*${mx}':y3='H*${ry}*(1-on/${d})+H*${invZ}'`;
+      break;
+    }
+    case 'pan-down': {
+      const z = 1.12;
+      const invZ = (1 / z).toFixed(6);
+      const mx = ((1 - 1 / z) / 2).toFixed(6);
+      const ry = (1 - 1 / z).toFixed(6);
+      perspExpr = `x0='W*${mx}':y0='H*${ry}*(on/${d})':x1='W-W*${mx}':y1='H*${ry}*(on/${d})':x2='W*${mx}':y2='H*${ry}*(on/${d})+H*${invZ}':x3='W-W*${mx}':y3='H*${ry}*(on/${d})+H*${invZ}'`;
+      break;
+    }
+    case 'diag-tl': {
+      const z = `(1.0+0.08*on/${d})`;
+      perspExpr = `x0='(W*(1-1/${z}))*(1-on/${d})':y0='(H*(1-1/${z}))*(1-on/${d})':x1='(W*(1-1/${z}))*(1-on/${d})+W/${z}':y1='(H*(1-1/${z}))*(1-on/${d})':x2='(W*(1-1/${z}))*(1-on/${d})':y2='(H*(1-1/${z}))*(1-on/${d})+H/${z}':x3='(W*(1-1/${z}))*(1-on/${d})+W/${z}':y3='(H*(1-1/${z}))*(1-on/${d})+H/${z}'`;
+      break;
+    }
+    case 'diag-br': {
+      const z = `(1.0+0.08*on/${d})`;
+      perspExpr = `x0='(W*(1-1/${z}))*(on/${d})':y0='(H*(1-1/${z}))*(on/${d})':x1='(W*(1-1/${z}))*(on/${d})+W/${z}':y1='(H*(1-1/${z}))*(on/${d})':x2='(W*(1-1/${z}))*(on/${d})':y2='(H*(1-1/${z}))*(on/${d})+H/${z}':x3='(W*(1-1/${z}))*(on/${d})+W/${z}':y3='(H*(1-1/${z}))*(on/${d})+H/${z}'`;
+      break;
+    }
+    case 'push-in': {
+      const z = `(1.0+0.22*on/${d})`;
+      perspExpr = `x0='(W/2)*(1-1/${z})':y0='(H/2)*(1-1/${z})':x1='W-(W/2)*(1-1/${z})':y1='(H/2)*(1-1/${z})':x2='(W/2)*(1-1/${z})':y2='H-(H/2)*(1-1/${z})':x3='W-(W/2)*(1-1/${z})':y3='H-(H/2)*(1-1/${z})'`;
+      break;
+    }
+    case 'pull-out': {
+      const z = `(1.22-0.22*on/${d})`;
+      perspExpr = `x0='(W/2)*(1-1/${z})':y0='(H/2)*(1-1/${z})':x1='W-(W/2)*(1-1/${z})':y1='(H/2)*(1-1/${z})':x2='(W/2)*(1-1/${z})':y2='H-(H/2)*(1-1/${z})':x3='W-(W/2)*(1-1/${z})':y3='H-(H/2)*(1-1/${z})'`;
+      break;
+    }
+    case 'zoom-in':
+    default: {
+      const z = `(1.0+0.14*on/${d})`;
+      perspExpr = `x0='(W/2)*(1-1/${z})':y0='(H/2)*(1-1/${z})':x1='W-(W/2)*(1-1/${z})':y1='(H/2)*(1-1/${z})':x2='(W/2)*(1-1/${z})':y2='H-(H/2)*(1-1/${z})':x3='W-(W/2)*(1-1/${z})':y3='H-(H/2)*(1-1/${z})'`;
+      break;
+    }
+  }
+
+  return `[${clipIdx}:v]${prepChain},perspective=${perspExpr}:interpolation=cubic:eval=frame,${tbNorm}[v${clipIdx}];\n`;
 }
 
 // ── 6. Assemble Complex Filter Graph with Transitions ─────────────────────────
