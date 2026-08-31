@@ -82,15 +82,29 @@ const detectedAudioDur = getAudioDuration(AUDIO_PATH);
 const fallbackTotalDuration = (rawImages.at(-1)?.startSec || 0) + 5;
 const AUDIO_DURATION = detectedAudioDur || fallbackTotalDuration;
 
-// Compute each clip's duration
-const images = rawImages.map((img, i) => {
-  const nextStart = i < rawImages.length - 1 ? rawImages[i + 1].startSec : AUDIO_DURATION;
-  const durationSec = Math.max(i < rawImages.length - 1 ? 0.1 : 3.0, nextStart - img.startSec);
-  return {
-    ...img,
-    durationSec: parseFloat(durationSec.toFixed(2)),
-  };
-});
+// Compute each clip's duration with robust duplicate/equal timestamp grouping
+const images = [];
+let imgIdx = 0;
+while (imgIdx < rawImages.length) {
+  let j = imgIdx;
+  while (j < rawImages.length && rawImages[j].startSec === rawImages[imgIdx].startSec) {
+    j++;
+  }
+  const groupCount = j - imgIdx;
+  const currentStart = rawImages[imgIdx].startSec;
+  const nextStart = j < rawImages.length ? rawImages[j].startSec : AUDIO_DURATION;
+  const totalGroupSpan = Math.max(groupCount * 1.5, nextStart - currentStart);
+  const durPerImg = totalGroupSpan / groupCount;
+
+  for (let k = 0; k < groupCount; k++) {
+    images.push({
+      name: rawImages[imgIdx + k].name,
+      startSec: parseFloat((currentStart + k * durPerImg).toFixed(2)),
+      durationSec: parseFloat(durPerImg.toFixed(2)),
+    });
+  }
+  imgIdx = j;
+}
 
 // Load timeline settings if available
 let timelineSettings = {
@@ -367,10 +381,10 @@ console.log(`\n🧩 Building video pipeline for ${images.length} clips...`);
 const inputs = [];
 let filterGraph = '';
 
-// Determine transition between clip i and clip i+1
-const clipData = images.map((img, i) => {
+// Determine transition and motion effect for each clip
+const clipData = images.map((img, idx) => {
   const override = timelineSettings.clipOverrides?.[img.name] || {};
-  const effect = isStatic ? 'static' : (override.motion || EFFECT_POOL[simpleHash(img.name) % EFFECT_POOL.length]);
+  const effect = isStatic ? 'static' : (override.motion || (activeEffectLabels ? EFFECT_POOL[simpleHash(img.name) % EFFECT_POOL.length] : 'zoom-in'));
   
   let transition = override.transition || globalTransition;
   if (transition === 'random') {
@@ -378,54 +392,61 @@ const clipData = images.map((img, i) => {
     transition = ALL_XFADES[simpleHash(img.name + '_trans') % ALL_XFADES.length];
   }
   
-  const transDur = Math.min(
-    Math.max(0.1, override.transitionDuration ?? globalTransDur),
-    Math.max(0.1, img.durationSec * 0.75)
+  const nextClip = images[idx + 1];
+  const maxSafeTransDur = nextClip ? Math.min(img.durationSec * 0.75, nextClip.durationSec * 0.75) : 0;
+  const requestedTransDur = override.transitionDuration ?? globalTransDur;
+  const rawTransDur = Math.min(
+    Math.max(0.1, requestedTransDur),
+    Math.max(0.1, maxSafeTransDur)
   );
+
+  const isCut = transition === 'cut' || transition === 'none' || !nextClip;
+  const tFrames = isCut ? 0 : Math.max(1, Math.round(rawTransDur * fps));
+  const transDur = isCut ? 0 : tFrames / fps;
 
   return {
     ...img,
     effect,
-    transition,
-    transDur: transition === 'cut' || transition === 'none' ? 0 : transDur,
+    transition: isCut ? 'cut' : transition,
+    transFrames: tFrames,
+    transDur,
   };
 });
 
 // Calculate total frames required for each clip
-// If clip i transitions into clip i+1 with transition duration T, clip i needs an extra T seconds of rendered frames so xfade can blend
 let imageInputCount = 0;
-for (let i = 0; i < clipData.length; i++) {
-  const c = clipData[i];
-  const nextTransDur = i < clipData.length - 1 ? clipData[i].transDur : 0;
-  const clipRenderDuration = c.durationSec + nextTransDur;
-  const totalFrames = Math.max(2, Math.round(clipRenderDuration * fps));
+for (let idx = 0; idx < clipData.length; idx++) {
+  const c = clipData[idx];
+  const nextTransDur = idx < clipData.length - 1 ? clipData[idx].transDur : 0;
+  const totalFrames = Math.max(2, Math.round((c.durationSec + nextTransDur) * fps));
+  c.actualRenderSec = totalFrames / fps;
 
   const imgPath = resolve(IMAGE_DIR, c.name).replace(/\\/g, '/');
   inputs.push('-i', imgPath);
   imageInputCount++;
 
-  filterGraph += buildClipFilter(i, c.effect, totalFrames, fps, outWidth, outHeight);
+  filterGraph += buildClipFilter(idx, c.effect, totalFrames, fps, outWidth, outHeight);
 }
 
-// Chain xfade transitions between clips
+// Chain xfade transitions between clips with frame-accurate stream duration tracking
 let lastStream = 'v0';
-let currentTimelineOffset = clipData[0].durationSec;
+let streamDuration = clipData[0].actualRenderSec;
 
-for (let i = 1; i < clipData.length; i++) {
-  const prevClip = clipData[i - 1];
-  const currClip = clipData[i];
-  const outLabel = `xf${i}`;
+for (let idx = 1; idx < clipData.length; idx++) {
+  const prevClip = clipData[idx - 1];
+  const currClip = clipData[idx];
+  const outLabel = `xf${idx}`;
   const tType = prevClip.transition;
   const tDur  = prevClip.transDur;
 
   if (tDur > 0 && tType !== 'cut' && tType !== 'none') {
-    const xfadeOffset = Math.max(0, currentTimelineOffset - tDur).toFixed(3);
-    filterGraph += `[${lastStream}][v${i}]xfade=transition=${tType}:duration=${tDur.toFixed(3)}:offset=${xfadeOffset}[${outLabel}];\n`;
-    currentTimelineOffset += currClip.durationSec;
+    const offset = streamDuration - tDur;
+    filterGraph += `[${lastStream}][v${idx}]xfade=transition=${tType}:duration=${tDur.toFixed(3)}:offset=${offset.toFixed(3)}[${outLabel}];\n`;
+    streamDuration = offset + currClip.actualRenderSec;
   } else {
     // Hard cut fallback
-    filterGraph += `[${lastStream}][v${i}]concat=n=2:v=1:a=0[${outLabel}];\n`;
-    currentTimelineOffset += currClip.durationSec;
+    filterGraph += `[${lastStream}][v${idx}]concat=n=2:v=1:a=0[${outLabel}];\n`;
+    streamDuration += currClip.actualRenderSec;
   }
   lastStream = outLabel;
 }
@@ -498,7 +519,7 @@ await new Promise((resolvePromise, rejectPromise) => {
           const pct = Math.min(100, Math.max(0, Math.floor((currentSec / AUDIO_DURATION) * 100)));
           if (pct !== lastPercent) {
             lastPercent = pct;
-            process.stdout.write(`${pct}% `);
+            process.stdout.write(`${pct}%\n`);
           }
         }
       }

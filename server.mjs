@@ -253,18 +253,42 @@ const server = http.createServer((req, res) => {
         .filter(Boolean)
         .sort((a, b) => a.timestamp.total - b.timestamp.total);
 
-      // Compute durations
+      // Compute durations with robust duplicate/equal timestamp grouping
       const audioInfo = getAudioInfo(AUDIO_PATH);
       const totalAudioSec = audioInfo?.duration || (rawImages.at(-1)?.timestamp.total + 5);
 
-      const images = rawImages.map((img, i) => {
-        const nextStart = i < rawImages.length - 1 ? rawImages[i + 1].timestamp.total : totalAudioSec;
-        const durationSec = Math.max(i < rawImages.length - 1 ? 0.1 : 3.0, nextStart - img.timestamp.total);
-        return {
-          ...img,
-          durationSec: parseFloat(durationSec.toFixed(1)),
-        };
-      });
+      const images = [];
+      let imgIdx = 0;
+      while (imgIdx < rawImages.length) {
+        let j = imgIdx;
+        while (j < rawImages.length && rawImages[j].timestamp.total === rawImages[imgIdx].timestamp.total) {
+          j++;
+        }
+        const groupCount = j - imgIdx;
+        const currentStart = rawImages[imgIdx].timestamp.total;
+        const nextStart = j < rawImages.length ? rawImages[j].timestamp.total : totalAudioSec;
+        const totalGroupSpan = Math.max(groupCount * 1.5, nextStart - currentStart);
+        const durPerImg = totalGroupSpan / groupCount;
+
+        for (let k = 0; k < groupCount; k++) {
+          const item = rawImages[imgIdx + k];
+          const calculatedStart = currentStart + k * durPerImg;
+          const min = Math.floor(calculatedStart / 60);
+          const sec = Math.floor(calculatedStart % 60);
+          images.push({
+            ...item,
+            timestamp: {
+              ...item.timestamp,
+              min,
+              sec,
+              total: parseFloat(calculatedStart.toFixed(2)),
+              label: `${min}:${String(sec).padStart(2, '0')}`,
+            },
+            durationSec: parseFloat(durPerImg.toFixed(1)),
+          });
+        }
+        imgIdx = j;
+      }
 
       return json(res, { count: images.length, images });
     } catch (e) {

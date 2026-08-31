@@ -1,10 +1,10 @@
 {
-  "globalTransition": "random",
+  "globalTransition": "cut",
   "transitionDuration": 0.3,
   "motionMode": "ken-burns",
   "clipOverrides": {
     "[0-00]_Hand-drawn_2D_dood.jpg": {
-      "transition": "cut",
+      "transition": "fade",
       "motion": "zoom-in",
       "transitionDuration": 0.3
     },
@@ -30,13 +30,13 @@
     },
     "[0-21]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "fade",
-      "transitionDuration": 0.8
+      "transition": "cut",
+      "transitionDuration": 0.3
     },
     "[0-24]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[0-28]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -56,7 +56,7 @@
     "[0-47]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[0-52]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -70,7 +70,7 @@
     },
     "[0-57]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[1-00]_Hand-drawn_2D_dood.jpg": {
@@ -91,7 +91,7 @@
     "[1-15]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[1-17]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -125,7 +125,7 @@
     },
     "[1-52]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[2-02]_Hand-drawn_2D_dood.jpg": {
@@ -136,7 +136,7 @@
     "[2-04]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[2-09]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -196,7 +196,7 @@
     "[3-12]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[3-20]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -206,7 +206,7 @@
     "[3-28]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[3-31]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -235,18 +235,18 @@
     },
     "[3-54]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "fade",
-      "transitionDuration": 0.8
+      "transition": "cut",
+      "transitionDuration": 0.3
     },
     "[3-55]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[4-00]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "fade",
-      "transitionDuration": 0.8
+      "transition": "cut",
+      "transitionDuration": 0.3
     },
     "[4-08]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -255,8 +255,8 @@
     },
     "[4-10]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "fade",
-      "transitionDuration": 0.8
+      "transition": "cut",
+      "transitionDuration": 0.3
     },
     "[4-19]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -266,7 +266,7 @@
     "[4-23]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[4-29]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -281,12 +281,12 @@
     "[4-40]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[4-46]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[4-50]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -301,7 +301,7 @@
     "[4-54]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[4-58]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -336,17 +336,17 @@
     "[5-27]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[5-30]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[5-33]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[5-34]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -361,7 +361,7 @@
     "[5-41]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[5-44]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -386,7 +386,7 @@
     "[6-07]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[6-09]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -401,7 +401,7 @@
     "[6-18]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[6-30]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -411,12 +411,12 @@
     "[6-37]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[6-40]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "fade",
-      "transitionDuration": 0.8
+      "transition": "cut",
+      "transitionDuration": 0.3
     },
     "[6-42]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -426,7 +426,7 @@
     "[6-48]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[6-53]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -435,8 +435,8 @@
     },
     "[7-06]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "fade",
-      "transitionDuration": 0.8
+      "transition": "cut",
+      "transitionDuration": 0.3
     },
     "[7-11]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -445,8 +445,8 @@
     },
     "[7-13]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "fade",
-      "transitionDuration": 0.8
+      "transition": "cut",
+      "transitionDuration": 0.3
     },
     "[7-21]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -461,12 +461,12 @@
     "[7-31]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[7-36]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
       "transition": "fade",
-      "transitionDuration": 0.8
+      "transitionDuration": 0.3
     },
     "[7-45]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
@@ -560,7 +560,7 @@
     },
     "[2-57]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[2-59]_Hand-drawn_2D_dood.jpg": {
@@ -570,7 +570,7 @@
     },
     "[3-04]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[3-10]_Hand-drawn_2D_dood.jpg": {
@@ -585,7 +585,7 @@
     },
     "[3-25]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[3-29]_Hand-drawn_2D_dood.jpg": {
@@ -610,17 +610,17 @@
     },
     "[3-51]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[3-58]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[4-04]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[4-07]_Hand-drawn_2D_dood.jpg": {
@@ -645,7 +645,7 @@
     },
     "[4-28]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[4-32]_Hand-drawn_2D_dood.jpg": {
@@ -655,7 +655,7 @@
     },
     "[4-41]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[4-45]_Hand-drawn_2D_dood.jpg": {
@@ -670,12 +670,12 @@
     },
     "[5-04]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[5-21]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[5-24]_Hand-drawn_2D_dood.jpg": {
@@ -700,7 +700,7 @@
     },
     "[6-17]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[6-23]_Hand-drawn_2D_dood.jpg": {
@@ -710,12 +710,12 @@
     },
     "[6-34]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[6-47]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[6-59]_Hand-drawn_2D_dood.jpg": {
@@ -745,12 +745,12 @@
     },
     "[7-41]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[7-51]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[7-53]_Hand-drawn_2D_dood.jpg": {
@@ -775,7 +775,7 @@
     },
     "[8-15]_Hand-drawn_2D_dood.jpg": {
       "motion": "zoom-in",
-      "transition": "cut",
+      "transition": "fade",
       "transitionDuration": 0.3
     },
     "[8-19]_Hand-drawn_2D_dood.jpg": {
@@ -857,6 +857,826 @@
       "motion": "zoom-in",
       "transition": "cut",
       "transitionDuration": 0.3
+    },
+    "[0-09]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-11]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-14]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-27]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-31]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-38]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-43]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-50]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-53]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-59]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-04]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-06]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-12]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-20]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-27]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-33]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-47]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-48]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-51]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-00]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-08]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-13]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-17]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-25]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-33]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-41]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-47]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-56]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-03]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-09]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-18]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-32]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-41]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-44]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-56]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-15]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-20]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-22]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-25]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-30]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-35]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-49]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-57]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-01]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-11]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-13]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-15]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-17]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-25]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-29]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-45]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-51]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-56]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-58]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-05]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-08]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-12]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-16]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-20]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-22]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-29]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-31]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-32]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-36]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-49]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-54]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-57]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-02]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-08]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-17]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-19]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-25]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-34]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-47]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-49]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-57]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-58]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-01]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-08]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-09]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-11]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-18]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-29]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-31]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-42]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-45]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-48]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-51]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-57]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[9-01]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[9-05]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[9-12]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[9-14]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[9-25]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[9-29]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[9-32]_Hand-drawn_2D_dood.jpg": {
+      "transition": "cut",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-03]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-10]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-30]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-32]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-39]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-54]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-11]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-19]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-22]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-24]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-32]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-37]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-44]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-49]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-50]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-53]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-55]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-56]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[1-58]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-07]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-14]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-18]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-23]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-29]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-35]_Hand-drawn_2D_dood (1).jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-35]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-43]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-50]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[2-54]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-00]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-07]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-08]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-22]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-36]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-42]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-45]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[3-48]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-01]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-09]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-11]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-13]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-33]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[4-59]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-06]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-09]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-36]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-48]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[5-54]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-10]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-14]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-24]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-28]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-41]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-45]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-52]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-56]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[6-58]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-00]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-07]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-09]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-15]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-20]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-27]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-46]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[7-56]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-02]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-03]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[8-20]_Hand-drawn_2D_dood.jpg": {
+      "transition": "fade",
+      "transitionDuration": 0.3,
+      "motion": "zoom-in"
     }
   }
 }
