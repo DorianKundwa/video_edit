@@ -441,11 +441,11 @@ for (let idx = 1; idx < clipData.length; idx++) {
 
   if (tDur > 0 && tType !== 'cut' && tType !== 'none') {
     const offset = streamDuration - tDur;
-    filterGraph += `[${lastStream}][v${idx}]xfade=transition=${tType}:duration=${tDur.toFixed(3)}:offset=${offset.toFixed(3)}[${outLabel}];\n`;
+    filterGraph += `[${lastStream}][v${idx}]xfade=transition=${tType}:duration=${tDur.toFixed(3)}:offset=${offset.toFixed(3)},settb=1/${fps}[${outLabel}];\n`;
     streamDuration = offset + currClip.actualRenderSec;
   } else {
     // Hard cut fallback
-    filterGraph += `[${lastStream}][v${idx}]concat=n=2:v=1:a=0[${outLabel}];\n`;
+    filterGraph += `[${lastStream}][v${idx}]concat=n=2:v=1:a=0,settb=1/${fps}[${outLabel}];\n`;
     streamDuration += currClip.actualRenderSec;
   }
   lastStream = outLabel;

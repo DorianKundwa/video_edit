@@ -1,7 +1,7 @@
 {
   "globalTransition": "cut",
   "transitionDuration": 0.3,
-  "motionMode": "ken-burns",
+  "motionMode": "static",
   "clipOverrides": {
     "[0-00]_Hand-drawn_2D_dood.jpg": {
       "transition": "fade",
@@ -1676,6 +1676,156 @@
     "[8-20]_Hand-drawn_2D_dood.jpg": {
       "transition": "fade",
       "transitionDuration": 0.3,
+      "motion": "zoom-in"
+    },
+    "[0-13]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[0-18]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[0-29]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[0-34]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[1-21]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[1-35]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[1-45]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[2-16]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[2-28]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[2-55]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[2-58]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[3-35]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[4-02]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[4-06]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[4-16]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[4-26]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[4-37]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[4-39]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[4-48]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[5-00]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[5-16]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[5-23]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[5-32]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[5-39]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[5-47]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[5-49]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[6-13]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[6-35]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[6-46]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[6-50]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[7-29]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[7-38]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[7-42]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[8-04]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[8-21]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[8-33]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[8-44]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[8-50]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-00]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-08]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-10]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-17]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-19]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-31]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-36]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-41]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-49]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-51]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[9-58]_Hand-drawn_2D_dood.jpg": {
+      "motion": "zoom-in"
+    },
+    "[10-00]_Hand-drawn_2D_doo.jpg": {
       "motion": "zoom-in"
     }
   }
