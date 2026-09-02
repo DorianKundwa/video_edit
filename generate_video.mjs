@@ -71,7 +71,7 @@ const rawImages = readdirSync(IMAGE_DIR)
   .filter(f => /\.(jpe?g|png|webp)$/i.test(f))
   .map(f => ({ name: f, startSec: parseTimestamp(f) }))
   .filter(x => x.startSec !== null)
-  .sort((a, b) => a.startSec - b.startSec);
+  .sort((a, b) => a.startSec - b.startSec || a.name.localeCompare(b.name));
 
 if (rawImages.length === 0) {
   console.error('❌ No timestamped images found in image directory!');
@@ -82,10 +82,7 @@ const detectedAudioDur = getAudioDuration(AUDIO_PATH);
 const fallbackTotalDuration = (rawImages.at(-1)?.startSec || 0) + 5;
 const AUDIO_DURATION = detectedAudioDur || fallbackTotalDuration;
 
-// Pre-roll lead time in seconds: visual change anticipates spoken audio by ~120ms to prevent late images
-const LEAD_IN_SEC = 0.12;
-
-// Compute each clip's duration with robust duplicate/equal timestamp grouping and lead-in anticipation
+// Compute each clip's duration with robust duplicate/equal timestamp grouping
 const rawClips = [];
 let imgIdx = 0;
 while (imgIdx < rawImages.length) {
@@ -109,7 +106,7 @@ while (imgIdx < rawImages.length) {
 }
 
 const images = rawClips.map((c, idx) => {
-  const targetStartSec = idx === 0 ? 0 : Math.max(0, c.nominalStartSec - LEAD_IN_SEC);
+  const targetStartSec = idx === 0 ? 0 : c.nominalStartSec;
   return {
     name: c.name,
     nominalStartSec: c.nominalStartSec,
@@ -249,16 +246,21 @@ function parseSrtToEntries(content) {
 }
 
 function srtTimeToSec(t) {
-  const [hms, ms = '0'] = t.split(',');
-  const [h, m, s] = hms.split(':').map(Number);
-  return h * 3600 + m * 60 + s + parseInt(ms, 10) / 1000;
+  const parts = t.replace(',', '.').split(':');
+  if (parts.length === 3) {
+    return parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]);
+  }
+  return 0;
 }
 
 function secToAssTime(sec) {
-  const h  = Math.floor(sec / 3600);
-  const m  = Math.floor((sec % 3600) / 60);
-  const s  = Math.floor(sec % 60);
-  const cs = Math.round((sec % 1) * 100);
+  const totalCs = Math.max(0, Math.round(sec * 100));
+  const cs = totalCs % 100;
+  const totalSec = Math.floor(totalCs / 100);
+  const s = totalSec % 60;
+  const totalMin = Math.floor(totalSec / 60);
+  const m = totalMin % 60;
+  const h = Math.floor(totalMin / 60);
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
 }
 

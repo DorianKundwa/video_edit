@@ -251,12 +251,11 @@ const server = http.createServer((req, res) => {
           return ts ? { name: f, timestamp: ts } : null;
         })
         .filter(Boolean)
-        .sort((a, b) => a.timestamp.total - b.timestamp.total);
+        .sort((a, b) => a.timestamp.total - b.timestamp.total || a.name.localeCompare(b.name));
 
-      // Compute durations with robust duplicate/equal timestamp grouping and lead-in anticipation
+      // Compute durations with robust duplicate/equal timestamp grouping
       const audioInfo = getAudioInfo(AUDIO_PATH);
       const totalAudioSec = audioInfo?.duration || (rawImages.at(-1)?.timestamp.total + 5);
-      const LEAD_IN_SEC = 0.12; // 120ms audio pre-roll lead time
 
       const rawClips = [];
       let imgIdx = 0;
@@ -273,7 +272,7 @@ const server = http.createServer((req, res) => {
 
         for (let k = 0; k < groupCount; k++) {
           const item = rawImages[imgIdx + k];
-          const nominalStart = currentStart + k * durPerImg;
+          const nominalStart = parseFloat((currentStart + k * durPerImg).toFixed(2));
           rawClips.push({
             item,
             nominalStart,
@@ -285,7 +284,7 @@ const server = http.createServer((req, res) => {
       const images = rawClips.map((c, idx) => {
         const item = c.item;
         const nominalStart = c.nominalStart;
-        const adjustedStart = idx === 0 ? 0 : Math.max(0, nominalStart - LEAD_IN_SEC);
+        const startSec = idx === 0 ? 0 : nominalStart;
         const nomMin = Math.floor(nominalStart / 60);
         const nomSec = Math.floor(nominalStart % 60);
 
@@ -296,7 +295,7 @@ const server = http.createServer((req, res) => {
             min: nomMin,
             sec: nomSec,
             nominalTotal: parseFloat(nominalStart.toFixed(2)),
-            total: parseFloat(adjustedStart.toFixed(3)),
+            total: parseFloat(startSec.toFixed(3)),
             label: `${nomMin}:${String(nomSec).padStart(2, '0')}`,
           },
         };
@@ -304,7 +303,7 @@ const server = http.createServer((req, res) => {
 
       for (let i = 0; i < images.length; i++) {
         const nextStart = i < images.length - 1 ? images[i + 1].timestamp.total : totalAudioSec;
-        images[i].durationSec = parseFloat(Math.max(0.5, nextStart - images[i].timestamp.total).toFixed(1));
+        images[i].durationSec = parseFloat(Math.max(0.5, nextStart - images[i].timestamp.total).toFixed(3));
       }
 
       return json(res, { count: images.length, images });

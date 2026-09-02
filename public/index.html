@@ -2770,7 +2770,7 @@
         : `Clip #${idx + 1} transition: ${trans} (${override.transitionDuration ?? globalTransitionDur}s) — Click to configure`;
 
       return `
-        <div class="image-item ${isSel ? 'selected' : ''}" data-idx="${idx}" id="img-item-${img.timestamp.total}" onclick="handleClipClick(${idx}, event)">
+        <div class="image-item ${isSel ? 'selected' : ''}" data-idx="${idx}" id="img-item-${idx}" onclick="handleClipClick(${idx}, event)">
           <input type="checkbox" class="clip-checkbox" ${isSel ? 'checked' : ''} onclick="toggleClipCheckbox(${idx}, event)" />
           <div class="img-thumb">
             <img src="/image/${encodeURIComponent(img.name)}" loading="lazy" alt="${cleanName}" />
@@ -2828,7 +2828,7 @@
         : `Transition #${idx + 1} ➔ #${idx + 2}: ${trans} (${override.transitionDuration ?? globalTransitionDur}s) — Click to configure`;
 
       return `
-        <div class="timeline-clip-block ${isSel ? 'selected' : ''}" style="width:${widthPx}px" data-idx="${idx}" id="tl-block-${img.timestamp.total}" onclick="handleClipClick(${idx}, event)">
+        <div class="timeline-clip-block ${isSel ? 'selected' : ''}" style="width:${widthPx}px" data-idx="${idx}" id="tl-block-${idx}" onclick="handleClipClick(${idx}, event)">
           <img class="tl-thumb" src="/image/${encodeURIComponent(img.name)}" loading="lazy" alt="" />
           <div class="tl-meta">
             <span class="tl-ts">${img.timestamp.label}</span>
@@ -3108,11 +3108,11 @@
     if (!clip) return;
 
     document.querySelectorAll('.image-item').forEach(el => el.classList.remove('active-playing'));
-    const sidebarItem = document.getElementById(`img-item-${clip.timestamp.total}`);
+    const sidebarItem = document.getElementById(`img-item-${clipIdx}`);
     if (sidebarItem) sidebarItem.classList.add('active-playing');
 
     document.querySelectorAll('.timeline-clip-block').forEach(el => el.classList.remove('active-playing'));
-    const tlBlock = document.getElementById(`tl-block-${clip.timestamp.total}`);
+    const tlBlock = document.getElementById(`tl-block-${clipIdx}`);
     if (tlBlock) tlBlock.classList.add('active-playing');
   }
 
