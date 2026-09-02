@@ -315,9 +315,9 @@ function buildClipFilter(clipIdx, effectName, totalFrames, clipFps, width, heigh
   const safeFrames = Math.max(2, totalFrames);
   const d = safeFrames;
 
-  // loop=loop:size=1 produces exact frame stream; scale & crop normalises to canvas aspect ratio
-  const prepChain = `loop=loop=${safeFrames}:size=1:start=0,scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height},setsar=1,fps=${clipFps}`;
-  const tbNorm = `setpts=PTS-STARTPTS,settb=1/${clipFps}`;
+  // Scale & crop normalises to canvas aspect ratio with exact output framerate
+  const prepChain = `scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height},setsar=1,fps=${clipFps}`;
+  const tbNorm = `trim=start_frame=0:end_frame=${safeFrames},setpts=PTS-STARTPTS,settb=1/${clipFps}`;
 
   if (isStatic || effectName === 'static') {
     return `[${clipIdx}:v]${prepChain},${tbNorm}[v${clipIdx}];\n`;
@@ -440,7 +440,7 @@ for (let idx = 0; idx < clipData.length; idx++) {
   c.actualRenderSec = totalFrames / fps;
 
   const imgPath = resolve(IMAGE_DIR, c.name).replace(/\\/g, '/');
-  inputs.push('-i', imgPath);
+  inputs.push('-framerate', String(fps), '-loop', '1', '-t', c.actualRenderSec.toFixed(3), '-i', imgPath);
   imageInputCount++;
 
   filterGraph += buildClipFilter(idx, c.effect, totalFrames, fps, outWidth, outHeight);
