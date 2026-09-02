@@ -82,8 +82,11 @@ const detectedAudioDur = getAudioDuration(AUDIO_PATH);
 const fallbackTotalDuration = (rawImages.at(-1)?.startSec || 0) + 5;
 const AUDIO_DURATION = detectedAudioDur || fallbackTotalDuration;
 
-// Compute each clip's duration with robust duplicate/equal timestamp grouping
-const images = [];
+// Pre-roll lead time in seconds: visual change anticipates spoken audio by ~120ms to prevent late images
+const LEAD_IN_SEC = 0.12;
+
+// Compute each clip's duration with robust duplicate/equal timestamp grouping and lead-in anticipation
+const rawClips = [];
 let imgIdx = 0;
 while (imgIdx < rawImages.length) {
   let j = imgIdx;
@@ -97,13 +100,26 @@ while (imgIdx < rawImages.length) {
   const durPerImg = totalGroupSpan / groupCount;
 
   for (let k = 0; k < groupCount; k++) {
-    images.push({
+    rawClips.push({
       name: rawImages[imgIdx + k].name,
-      startSec: parseFloat((currentStart + k * durPerImg).toFixed(2)),
-      durationSec: parseFloat(durPerImg.toFixed(2)),
+      nominalStartSec: parseFloat((currentStart + k * durPerImg).toFixed(2)),
     });
   }
   imgIdx = j;
+}
+
+const images = rawClips.map((c, idx) => {
+  const targetStartSec = idx === 0 ? 0 : Math.max(0, c.nominalStartSec - LEAD_IN_SEC);
+  return {
+    name: c.name,
+    nominalStartSec: c.nominalStartSec,
+    startSec: parseFloat(targetStartSec.toFixed(3)),
+  };
+});
+
+for (let i = 0; i < images.length; i++) {
+  const nextStart = i < images.length - 1 ? images[i + 1].startSec : AUDIO_DURATION;
+  images[i].durationSec = parseFloat(Math.max(0.5, nextStart - images[i].startSec).toFixed(3));
 }
 
 // Load timeline settings if available

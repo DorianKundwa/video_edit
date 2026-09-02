@@ -253,11 +253,12 @@ const server = http.createServer((req, res) => {
         .filter(Boolean)
         .sort((a, b) => a.timestamp.total - b.timestamp.total);
 
-      // Compute durations with robust duplicate/equal timestamp grouping
+      // Compute durations with robust duplicate/equal timestamp grouping and lead-in anticipation
       const audioInfo = getAudioInfo(AUDIO_PATH);
       const totalAudioSec = audioInfo?.duration || (rawImages.at(-1)?.timestamp.total + 5);
+      const LEAD_IN_SEC = 0.12; // 120ms audio pre-roll lead time
 
-      const images = [];
+      const rawClips = [];
       let imgIdx = 0;
       while (imgIdx < rawImages.length) {
         let j = imgIdx;
@@ -272,22 +273,38 @@ const server = http.createServer((req, res) => {
 
         for (let k = 0; k < groupCount; k++) {
           const item = rawImages[imgIdx + k];
-          const calculatedStart = currentStart + k * durPerImg;
-          const min = Math.floor(calculatedStart / 60);
-          const sec = Math.floor(calculatedStart % 60);
-          images.push({
-            ...item,
-            timestamp: {
-              ...item.timestamp,
-              min,
-              sec,
-              total: parseFloat(calculatedStart.toFixed(2)),
-              label: `${min}:${String(sec).padStart(2, '0')}`,
-            },
-            durationSec: parseFloat(durPerImg.toFixed(1)),
+          const nominalStart = currentStart + k * durPerImg;
+          rawClips.push({
+            item,
+            nominalStart,
           });
         }
         imgIdx = j;
+      }
+
+      const images = rawClips.map((c, idx) => {
+        const item = c.item;
+        const nominalStart = c.nominalStart;
+        const adjustedStart = idx === 0 ? 0 : Math.max(0, nominalStart - LEAD_IN_SEC);
+        const nomMin = Math.floor(nominalStart / 60);
+        const nomSec = Math.floor(nominalStart % 60);
+
+        return {
+          ...item,
+          timestamp: {
+            ...item.timestamp,
+            min: nomMin,
+            sec: nomSec,
+            nominalTotal: parseFloat(nominalStart.toFixed(2)),
+            total: parseFloat(adjustedStart.toFixed(3)),
+            label: `${nomMin}:${String(nomSec).padStart(2, '0')}`,
+          },
+        };
+      });
+
+      for (let i = 0; i < images.length; i++) {
+        const nextStart = i < images.length - 1 ? images[i + 1].timestamp.total : totalAudioSec;
+        images[i].durationSec = parseFloat(Math.max(0.5, nextStart - images[i].timestamp.total).toFixed(1));
       }
 
       return json(res, { count: images.length, images });
