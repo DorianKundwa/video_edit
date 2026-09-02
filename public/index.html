@@ -449,6 +449,34 @@
       transition: border-color 0.2s;
     }
     .toolbar-select:focus { border-color: var(--amber); }
+    .toolbar-select:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      border-color: var(--border);
+    }
+
+    .toolbar-action-btn {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      border-radius: var(--radius-sm);
+      padding: 3px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .toolbar-action-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: rgba(239, 68, 68, 0.6);
+      color: #fff;
+      transform: translateY(-1px);
+    }
 
     /* Motion Mode Toggle */
     .motion-toggle-wrap {
@@ -757,6 +785,27 @@
       gap: 5px;
     }
 
+    .batch-btn-cut {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      padding: 4px 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .batch-btn-cut:hover {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: var(--red);
+      color: #fff;
+    }
+
     .batch-select {
       background: var(--bg1);
       border: 1px solid var(--border-hi);
@@ -902,13 +951,33 @@
       background: rgba(14, 165, 233, 0.12);
       border: 1px solid rgba(14, 165, 233, 0.3);
       color: var(--cyan-light);
-      padding: 1px 4px;
+      padding: 1px 5px;
       border-radius: 3px;
       cursor: pointer;
       margin-left: auto;
       transition: all 0.15s;
+      white-space: nowrap;
     }
     .trans-pill:hover { border-color: var(--cyan); background: rgba(14, 165, 233, 0.25); }
+    .trans-pill.is-cut {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: var(--text-dim);
+    }
+    .trans-pill.is-cut:hover {
+      border-color: var(--amber);
+      color: var(--amber-light);
+      background: rgba(245, 158, 11, 0.12);
+    }
+    .trans-pill.is-animated {
+      background: rgba(14, 165, 233, 0.12);
+      border-color: rgba(14, 165, 233, 0.35);
+      color: var(--cyan-light);
+    }
+    .trans-pill.is-animated:hover {
+      border-color: var(--cyan);
+      background: rgba(14, 165, 233, 0.25);
+    }
 
     .img-name {
       font-size: 11px;
@@ -1272,7 +1341,235 @@
     .tl-trans-connector:hover {
       background: var(--cyan-glow);
       border-color: var(--cyan);
-      transform: scale(1.2);
+      transform: scale(1.25);
+    }
+    .tl-trans-connector.is-cut {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.18);
+      color: var(--text-dim);
+      font-size: 8.5px;
+    }
+    .tl-trans-connector.is-cut:hover {
+      border-color: var(--amber);
+      color: var(--amber-light);
+      background: rgba(245, 158, 11, 0.2);
+      transform: scale(1.25);
+    }
+    .tl-trans-connector.is-animated {
+      background: rgba(14, 165, 233, 0.12);
+      border-color: rgba(14, 165, 233, 0.35);
+      color: var(--cyan-light);
+    }
+    .tl-trans-connector.is-animated:hover {
+      background: var(--cyan-glow);
+      border-color: var(--cyan);
+      transform: scale(1.25);
+    }
+
+    /* ── Floating Transition Picker Popover ─────────────────────────── */
+    .trans-popover-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 998;
+      display: none;
+    }
+    .trans-popover-backdrop.open { display: block; }
+
+    .trans-popover {
+      position: fixed;
+      z-index: 999;
+      width: 320px;
+      background: rgba(18, 20, 36, 0.98);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: popoverIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .trans-popover.open { display: flex; }
+
+    @keyframes popoverIn {
+      from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .trans-popover-header {
+      padding: 10px 14px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .trans-popover-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .trans-popover-close {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .trans-popover-close:hover {
+      color: var(--text);
+      background: var(--bg3);
+    }
+
+    .trans-popover-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+    .trans-popover-body::-webkit-scrollbar { width: 5px; }
+    .trans-popover-body::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 4px; }
+
+    .trans-hero-cut-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: var(--radius-md);
+      color: #fca5a5;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+      text-align: left;
+    }
+    .trans-hero-cut-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: rgba(239, 68, 68, 0.6);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .trans-hero-cut-btn.selected {
+      background: rgba(239, 68, 68, 0.32);
+      border-color: var(--red);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.35);
+    }
+
+    .trans-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-dim);
+    }
+
+    .trans-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+
+    .trans-option-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .trans-option-btn:hover {
+      background: var(--bg4);
+      color: var(--text);
+      border-color: var(--border-hi);
+    }
+    .trans-option-btn.selected {
+      background: rgba(14, 165, 233, 0.2);
+      border-color: var(--cyan);
+      color: var(--cyan-light);
+      box-shadow: 0 0 8px rgba(14, 165, 233, 0.25);
+    }
+
+    .trans-dur-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border);
+    }
+    .trans-dur-pills {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .trans-dur-pill {
+      padding: 3px 6px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .trans-dur-pill:hover {
+      background: var(--bg4);
+      color: var(--text);
+    }
+    .trans-dur-pill.selected {
+      background: var(--amber-glow);
+      border-color: var(--amber);
+      color: var(--amber-light);
+    }
+
+    .trans-popover-footer {
+      padding: 8px 12px;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .trans-reset-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .trans-reset-btn:hover {
+      background: var(--bg3);
+      color: var(--text);
+      border-color: var(--border-hi);
     }
 
     /* ── Modals & Overlays ─────────────────────────────────────────────── */
@@ -1560,28 +1857,32 @@
     <div class="transition-tool-wrap">
       <span class="tool-label">🔀 Transition</span>
       <select class="toolbar-select" id="globalTransitionSelect" onchange="onGlobalTransitionChange()">
-        <option value="fade">Crossfade (fade)</option>
-        <option value="wipeleft">Wipe Left</option>
-        <option value="wiperight">Wipe Right</option>
-        <option value="slideleft">Slide Left</option>
-        <option value="slideright">Slide Right</option>
-        <option value="circlecrop">Circle Reveal</option>
-        <option value="zoomin">Zoom In</option>
-        <option value="dissolve">Dissolve</option>
-        <option value="fadeblack">Fade to Black</option>
-        <option value="fadewhite">Fade to White</option>
-        <option value="smoothleft">Smooth Left</option>
-        <option value="smoothright">Smooth Right</option>
-        <option value="random">Random Mix</option>
-        <option value="cut">Direct Cut (None)</option>
+        <option value="cut">✂️ No Transition (Direct Cut)</option>
+        <option value="fade" selected>🔀 Crossfade (fade)</option>
+        <option value="wipeleft">⬅️ Wipe Left</option>
+        <option value="wiperight">➡️ Wipe Right</option>
+        <option value="slideleft">◀️ Slide Left</option>
+        <option value="slideright">▶️ Slide Right</option>
+        <option value="circlecrop">⭕ Circle Reveal</option>
+        <option value="zoomin">🔍 Zoom In</option>
+        <option value="dissolve">🌫 Dissolve</option>
+        <option value="fadeblack">⬛ Fade to Black</option>
+        <option value="fadewhite">⬜ Fade to White</option>
+        <option value="smoothleft">🌊 Smooth Left</option>
+        <option value="smoothright">🌊 Smooth Right</option>
+        <option value="random">🎲 Random Mix</option>
       </select>
       <select class="toolbar-select" id="globalTransDurSelect" onchange="onGlobalTransitionChange()" style="width:68px">
+        <option value="0.2">0.2s</option>
         <option value="0.3">0.3s</option>
         <option value="0.5" selected>0.5s</option>
         <option value="0.8">0.8s</option>
         <option value="1.0">1.0s</option>
         <option value="1.5">1.5s</option>
       </select>
+      <button type="button" class="toolbar-action-btn" id="btnDisableAllTransitions" onclick="applyNoTransitionToAll()" title="Set No Transition on ALL clips in project">
+        ✂️ No Transitions (All)
+      </button>
     </div>
 
     <!-- Motion Mode Toggle -->
@@ -1648,6 +1949,10 @@
         <button type="button" class="selection-tag-btn" onclick="playSelectedClipsRange()">▶ Preview Selection</button>
       </div>
       <div class="batch-actions-grid">
+        <button type="button" class="batch-btn-cut" onclick="applyBatchNoTransition()" title="Set No Transition (Direct Cut) on all selected clips">
+          ✂️ No Transition
+        </button>
+
         <select class="batch-select" id="batchMotionSelect" onchange="applyBatchMotion(this.value)">
           <option value="" disabled selected>⚡ Apply Motion Effect...</option>
           <option value="zoom-in">Zoom In</option>
@@ -1663,21 +1968,22 @@
           <option value="static">Static (No Motion)</option>
         </select>
 
-        <select class="batch-select" id="batchTransitionSelect" onchange="applyBatchTransition(this.value)">
-          <option value="" disabled selected>🔀 Apply Transition...</option>
-          <option value="fade">Crossfade (fade)</option>
-          <option value="wipeleft">Wipe Left</option>
-          <option value="wiperight">Wipe Right</option>
-          <option value="slideleft">Slide Left</option>
-          <option value="slideright">Slide Right</option>
-          <option value="circlecrop">Circle Reveal</option>
-          <option value="zoomin">Zoom In</option>
-          <option value="dissolve">Dissolve</option>
-          <option value="fadeblack">Fade Black</option>
-          <option value="fadewhite">Fade White</option>
-          <option value="smoothleft">Smooth Left</option>
-          <option value="smoothright">Smooth Right</option>
-          <option value="cut">Hard Cut</option>
+        <select class="batch-select" id="batchTransitionSelect" onchange="applyBatchTransition(this.value)" style="grid-column: span 2">
+          <option value="" disabled selected>🔀 Apply Transition to Selected...</option>
+          <option value="cut">✂️ No Transition (Direct Cut)</option>
+          <option value="fade">🔀 Crossfade (fade)</option>
+          <option value="wipeleft">⬅️ Wipe Left</option>
+          <option value="wiperight">➡️ Wipe Right</option>
+          <option value="slideleft">◀️ Slide Left</option>
+          <option value="slideright">▶️ Slide Right</option>
+          <option value="circlecrop">⭕ Circle Reveal</option>
+          <option value="zoomin">🔍 Zoom In</option>
+          <option value="dissolve">🌫 Dissolve</option>
+          <option value="fadeblack">⬛ Fade to Black</option>
+          <option value="fadewhite">⬜ Fade to White</option>
+          <option value="smoothleft">🌊 Smooth Left</option>
+          <option value="smoothright">🌊 Smooth Right</option>
+          <option value="random">🎲 Random Mix</option>
         </select>
       </div>
     </div>
@@ -1914,15 +2220,80 @@
   </div>
 </div>
 
+<!-- ── Transition Quick Picker Popover ─────────────────────────────── -->
+<div class="trans-popover-backdrop" id="transPickerBackdrop" onclick="closeTransitionPicker()"></div>
+<div class="trans-popover" id="transitionPickerPopover">
+  <div class="trans-popover-header">
+    <div class="trans-popover-title">
+      <span>🔀</span> <span id="transPopoverTitle">Clip Transition</span>
+    </div>
+    <button type="button" class="trans-popover-close" onclick="closeTransitionPicker()" title="Close (Esc)">✕</button>
+  </div>
+  <div class="trans-popover-body">
+    <!-- Hero "No Transition (Direct Cut)" Button -->
+    <button type="button" class="trans-hero-cut-btn" id="popoverCutBtn" onclick="applyPopoverTransition('cut')">
+      <div>
+        <div style="font-size:12px;font-weight:800;display:flex;align-items:center;gap:5px">
+          <span>✂️</span> No Transition (Direct Cut)
+        </div>
+        <div style="font-size:10px;opacity:0.8;margin-top:2px">Instant switch between clips (0s length)</div>
+      </div>
+      <span style="font-size:14px;opacity:0.7">➔</span>
+    </button>
+
+    <div class="trans-section-label">Animated Transitions</div>
+    <div class="trans-grid" id="popoverTransGrid">
+      <!-- Populated via JS -->
+    </div>
+
+    <div class="trans-dur-row" id="popoverDurRow">
+      <span class="trans-section-label">Duration</span>
+      <div class="trans-dur-pills" id="popoverDurPills">
+        <button type="button" class="trans-dur-pill" data-dur="0.2" onclick="applyPopoverDuration(0.2)">0.2s</button>
+        <button type="button" class="trans-dur-pill" data-dur="0.3" onclick="applyPopoverDuration(0.3)">0.3s</button>
+        <button type="button" class="trans-dur-pill" data-dur="0.5" onclick="applyPopoverDuration(0.5)">0.5s</button>
+        <button type="button" class="trans-dur-pill" data-dur="0.8" onclick="applyPopoverDuration(0.8)">0.8s</button>
+        <button type="button" class="trans-dur-pill" data-dur="1.0" onclick="applyPopoverDuration(1.0)">1.0s</button>
+        <button type="button" class="trans-dur-pill" data-dur="1.5" onclick="applyPopoverDuration(1.5)">1.5s</button>
+      </div>
+    </div>
+  </div>
+  <div class="trans-popover-footer">
+    <button type="button" class="trans-reset-btn" onclick="resetPopoverClipTransition()" title="Remove override and inherit global transition">
+      ↺ Reset to Global Default
+    </button>
+    <button type="button" class="trans-reset-btn" style="color:var(--amber-light);border-color:rgba(245,158,11,0.3)" onclick="applyNoTransitionToAllFromPopover()" title="Set No Transition across ALL clips in the project">
+      ✂️ Set ALL: No Transition
+    </button>
+  </div>
+</div>
+
 <!-- ── Script Logic ────────────────────────────────────────────────── -->
 <script>
   const ALL_EFFECT_LABELS = ['zoom-in','zoom-out','pan-left','pan-right','pan-up','pan-down','diag-tl','diag-br','push-in','pull-out'];
   const ALL_TRANSITION_LABELS = ['fade','wipeleft','wiperight','slideleft','slideright','circlecrop','zoomin','dissolve','fadeblack','fadewhite','smoothleft','smoothright','cut'];
 
+  const TRANSITION_OPTIONS = [
+    { id: 'fade', label: 'Crossfade', icon: '🔀' },
+    { id: 'wipeleft', label: 'Wipe Left', icon: '⬅️' },
+    { id: 'wiperight', label: 'Wipe Right', icon: '➡️' },
+    { id: 'slideleft', label: 'Slide Left', icon: '◀️' },
+    { id: 'slideright', label: 'Slide Right', icon: '▶️' },
+    { id: 'circlecrop', label: 'Circle Reveal', icon: '⭕' },
+    { id: 'zoomin', label: 'Zoom In', icon: '🔍' },
+    { id: 'dissolve', label: 'Dissolve', icon: '🌫' },
+    { id: 'fadeblack', label: 'Fade Black', icon: '⬛' },
+    { id: 'fadewhite', label: 'Fade White', icon: '⬜' },
+    { id: 'smoothleft', label: 'Smooth Left', icon: '🌊' },
+    { id: 'smoothright', label: 'Smooth Right', icon: '🌊' },
+    { id: 'random', label: 'Random Mix', icon: '🎲' },
+  ];
+
   let allImages             = [];
   let selectedClipIndices   = new Set();
   let lastSelectedIdx       = -1;
   let activePlayingIdx      = 0;
+  let activePickerClipIdx   = null;
 
   let selectedResolution    = '1080p';
   let selectedMotionMode    = 'ken-burns';
@@ -1999,6 +2370,7 @@
 
         document.getElementById('globalTransitionSelect').value = globalTransition;
         document.getElementById('globalTransDurSelect').value = String(globalTransitionDur);
+        updateGlobalDurSelectState();
         setMotionMode(selectedMotionMode, false);
       }
     } catch {}
@@ -2019,13 +2391,209 @@
     } catch {}
   }
 
+  function updateGlobalDurSelectState() {
+    const durSelect = document.getElementById('globalTransDurSelect');
+    if (!durSelect) return;
+    const isCut = globalTransition === 'cut' || globalTransition === 'none';
+    durSelect.disabled = isCut;
+  }
+
   function onGlobalTransitionChange() {
     globalTransition = document.getElementById('globalTransitionSelect').value;
     globalTransitionDur = parseFloat(document.getElementById('globalTransDurSelect').value);
+    updateGlobalDurSelectState();
     saveTimelineSettings();
     renderImageList(allImages);
     renderVisualTimeline(allImages);
-    showToast(`Global transition: ${globalTransition} (${globalTransitionDur}s)`, 'info');
+    const transLabel = (globalTransition === 'cut' || globalTransition === 'none') ? 'No Transition (Direct Cut)' : `${globalTransition} (${globalTransitionDur}s)`;
+    showToast(`Global transition: ${transLabel}`, 'info');
+  }
+
+  // ── Transition Quick Picker Popover Engine ────────────────────────────────
+  function openTransitionPicker(clipIdx, targetEl, e) {
+    if (e) e.stopPropagation();
+    const clip = allImages[clipIdx];
+    if (!clip) return;
+
+    activePickerClipIdx = clipIdx;
+    const override = clipOverrides[clip.name] || {};
+    const currentTrans = override.transition || globalTransition;
+    const currentDur = override.transitionDuration ?? globalTransitionDur;
+    const isCut = currentTrans === 'cut' || currentTrans === 'none';
+
+    document.getElementById('transPopoverTitle').textContent = `Clip #${clipIdx + 1} (${clip.timestamp.label})`;
+    
+    // Update Hero Cut Button
+    const heroBtn = document.getElementById('popoverCutBtn');
+    heroBtn.classList.toggle('selected', isCut);
+
+    // Populate Animated Transitions Grid
+    const grid = document.getElementById('popoverTransGrid');
+    grid.innerHTML = TRANSITION_OPTIONS.map(opt => {
+      const isSelected = !isCut && currentTrans === opt.id;
+      return `
+        <button type="button" class="trans-option-btn ${isSelected ? 'selected' : ''}" onclick="applyPopoverTransition('${opt.id}')">
+          <span>${opt.icon}</span> <span>${opt.label}</span>
+        </button>
+      `;
+    }).join('');
+
+    // Update Duration Pills
+    const durRow = document.getElementById('popoverDurRow');
+    if (isCut) {
+      durRow.style.opacity = '0.4';
+      durRow.style.pointerEvents = 'none';
+    } else {
+      durRow.style.opacity = '1';
+      durRow.style.pointerEvents = 'auto';
+    }
+
+    document.querySelectorAll('.trans-dur-pill').forEach(pill => {
+      const d = parseFloat(pill.dataset.dur);
+      pill.classList.toggle('selected', !isCut && Math.abs(d - currentDur) < 0.05);
+    });
+
+    // Position Popover
+    const popover = document.getElementById('transitionPickerPopover');
+    const backdrop = document.getElementById('transPickerBackdrop');
+    backdrop.classList.add('open');
+    popover.classList.add('open');
+
+    const rect = targetEl ? targetEl.getBoundingClientRect() : { top: 100, left: 100, bottom: 120, right: 120, height: 20, width: 20 };
+    const popoverWidth = 320;
+    const popoverHeight = 360;
+
+    let top = rect.bottom + 6;
+    let left = rect.left;
+
+    if (top + popoverHeight > window.innerHeight - 10) {
+      top = Math.max(10, rect.top - popoverHeight - 6);
+    }
+
+    if (left + popoverWidth > window.innerWidth - 10) {
+      left = Math.max(10, window.innerWidth - popoverWidth - 10);
+    }
+
+    popover.style.top = `${Math.round(top)}px`;
+    popover.style.left = `${Math.round(left)}px`;
+  }
+
+  function closeTransitionPicker() {
+    activePickerClipIdx = null;
+    const popover = document.getElementById('transitionPickerPopover');
+    const backdrop = document.getElementById('transPickerBackdrop');
+    if (popover) popover.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('open');
+  }
+
+  function applyPopoverTransition(trans) {
+    if (activePickerClipIdx === null) return;
+    const clipIdx = activePickerClipIdx;
+    const clip = allImages[clipIdx];
+    if (!clip) return;
+
+    if (!clipOverrides[clip.name]) clipOverrides[clip.name] = {};
+    clipOverrides[clip.name].transition = trans;
+    
+    if (trans === 'cut' || trans === 'none') {
+      clipOverrides[clip.name].transitionDuration = 0;
+    } else if (clipOverrides[clip.name].transitionDuration === 0 || !clipOverrides[clip.name].transitionDuration) {
+      clipOverrides[clip.name].transitionDuration = globalTransitionDur || 0.5;
+    }
+
+    saveTimelineSettings();
+    renderImageList(allImages);
+    renderVisualTimeline(allImages);
+
+    const transLabel = (trans === 'cut' || trans === 'none') ? 'No Transition (Cut)' : trans;
+    showToast(`Clip #${clipIdx + 1} transition set to: ${transLabel}`, 'success');
+    closeTransitionPicker();
+  }
+
+  function applyPopoverDuration(dur) {
+    if (activePickerClipIdx === null) return;
+    const clipIdx = activePickerClipIdx;
+    const clip = allImages[clipIdx];
+    if (!clip) return;
+
+    if (!clipOverrides[clip.name]) clipOverrides[clip.name] = {};
+    clipOverrides[clip.name].transitionDuration = dur;
+    if (!clipOverrides[clip.name].transition || clipOverrides[clip.name].transition === 'cut') {
+      clipOverrides[clip.name].transition = globalTransition === 'cut' ? 'fade' : globalTransition;
+    }
+
+    saveTimelineSettings();
+    renderImageList(allImages);
+    renderVisualTimeline(allImages);
+
+    showToast(`Clip #${clipIdx + 1} transition duration: ${dur}s`, 'info');
+    closeTransitionPicker();
+  }
+
+  function resetPopoverClipTransition() {
+    if (activePickerClipIdx === null) return;
+    const clipIdx = activePickerClipIdx;
+    const clip = allImages[clipIdx];
+    if (!clip) return;
+
+    if (clipOverrides[clip.name]) {
+      delete clipOverrides[clip.name].transition;
+      delete clipOverrides[clip.name].transitionDuration;
+      if (Object.keys(clipOverrides[clip.name]).length === 0) {
+        delete clipOverrides[clip.name];
+      }
+    }
+
+    saveTimelineSettings();
+    renderImageList(allImages);
+    renderVisualTimeline(allImages);
+
+    showToast(`Clip #${clipIdx + 1} reset to global default (${globalTransition === 'cut' ? 'No Transition' : globalTransition})`, 'info');
+    closeTransitionPicker();
+  }
+
+  function applyNoTransitionToAllFromPopover() {
+    closeTransitionPicker();
+    applyNoTransitionToAll();
+  }
+
+  function applyNoTransitionToAll() {
+    globalTransition = 'cut';
+    globalTransitionDur = 0;
+    document.getElementById('globalTransitionSelect').value = 'cut';
+    updateGlobalDurSelectState();
+
+    allImages.forEach(img => {
+      if (!clipOverrides[img.name]) clipOverrides[img.name] = {};
+      clipOverrides[img.name].transition = 'cut';
+      clipOverrides[img.name].transitionDuration = 0;
+    });
+
+    saveTimelineSettings();
+    renderImageList(allImages);
+    renderVisualTimeline(allImages);
+    showToast('✂️ "No Transition (Direct Cut)" applied to ALL clips!', 'success');
+  }
+
+  function applyBatchNoTransition() {
+    if (selectedClipIndices.size === 0) {
+      showToast('Please select one or more clips first', 'info');
+      return;
+    }
+
+    selectedClipIndices.forEach(idx => {
+      const img = allImages[idx];
+      if (img) {
+        if (!clipOverrides[img.name]) clipOverrides[img.name] = {};
+        clipOverrides[img.name].transition = 'cut';
+        clipOverrides[img.name].transitionDuration = 0;
+      }
+    });
+
+    saveTimelineSettings();
+    renderImageList(allImages);
+    renderVisualTimeline(allImages);
+    showToast(`✂️ Set "No Transition" on ${selectedClipIndices.size} selected clip${selectedClipIndices.size > 1 ? 's' : ''}`, 'success');
   }
 
   // ── Multi-Select System ───────────────────────────────────────────────────
@@ -2137,18 +2705,20 @@
 
   function applyBatchTransition(trans) {
     if (!trans || selectedClipIndices.size === 0) return;
+    const isCut = trans === 'cut' || trans === 'none';
     selectedClipIndices.forEach(idx => {
       const img = allImages[idx];
       if (img) {
         if (!clipOverrides[img.name]) clipOverrides[img.name] = {};
         clipOverrides[img.name].transition = trans;
-        clipOverrides[img.name].transitionDuration = globalTransitionDur;
+        clipOverrides[img.name].transitionDuration = isCut ? 0 : globalTransitionDur;
       }
     });
     saveTimelineSettings();
     renderImageList(allImages);
     renderVisualTimeline(allImages);
-    showToast(`Applied transition "${trans}" to ${selectedClipIndices.size} clips`, 'success');
+    const transLabel = isCut ? 'No Transition (Cut)' : trans;
+    showToast(`Applied transition "${transLabel}" to ${selectedClipIndices.size} clips`, 'success');
     document.getElementById('batchTransitionSelect').value = '';
   }
 
@@ -2190,7 +2760,14 @@
       const override = clipOverrides[img.name] || {};
       const effect = override.motion || 'auto';
       const trans = override.transition || globalTransition;
+      const isCut = trans === 'cut' || trans === 'none';
       const isSel = selectedClipIndices.has(idx);
+
+      const transLabel = isCut ? '✂️ None' : `🔀 ${trans}`;
+      const transClass = isCut ? 'is-cut' : 'is-animated';
+      const transTitle = isCut 
+        ? `Clip #${idx + 1} transition: No Transition (Direct Cut) — Click to configure` 
+        : `Clip #${idx + 1} transition: ${trans} (${override.transitionDuration ?? globalTransitionDur}s) — Click to configure`;
 
       return `
         <div class="image-item ${isSel ? 'selected' : ''}" data-idx="${idx}" id="img-item-${img.timestamp.total}" onclick="handleClipClick(${idx}, event)">
@@ -2203,7 +2780,7 @@
               <span class="ts-badge">${img.timestamp.label}</span>
               <span class="dur-badge">${img.durationSec ? img.durationSec + 's' : ''}</span>
               <span class="clip-pill" onclick="cycleClipMotion(${idx}, event)" title="Click to cycle motion effect">${effect}</span>
-              <span class="trans-pill" onclick="cycleClipTransition(${idx}, event)" title="Click to cycle transition">🔀 ${trans}</span>
+              <span class="trans-pill ${transClass}" onclick="openTransitionPicker(${idx}, this, event)" title="${transTitle}">${transLabel}</span>
             </div>
             <span class="img-name">${cleanName}</span>
           </div>
@@ -2230,22 +2807,6 @@
     showToast(`Clip #${idx+1} motion: ${nextEffect}`, 'info');
   }
 
-  function cycleClipTransition(idx, e) {
-    e.stopPropagation();
-    const img = allImages[idx];
-    if (!img) return;
-    if (!clipOverrides[img.name]) clipOverrides[img.name] = {};
-    const current = clipOverrides[img.name].transition || globalTransition;
-    const nextIdx = (ALL_TRANSITION_LABELS.indexOf(current) + 1) % ALL_TRANSITION_LABELS.length;
-    const nextTrans = ALL_TRANSITION_LABELS[nextIdx];
-    clipOverrides[img.name].transition = nextTrans;
-    clipOverrides[img.name].transitionDuration = globalTransitionDur;
-    saveTimelineSettings();
-    renderImageList(allImages);
-    renderVisualTimeline(allImages);
-    showToast(`Clip #${idx+1} transition: ${nextTrans}`, 'info');
-  }
-
   // ── Bottom Visual Timeline Strip ──────────────────────────────────────────
   function renderVisualTimeline(images) {
     const strip = document.getElementById('timelineStrip');
@@ -2256,8 +2817,15 @@
     strip.innerHTML = images.map((img, idx) => {
       const override = clipOverrides[img.name] || {};
       const trans = override.transition || globalTransition;
+      const isCut = trans === 'cut' || trans === 'none';
       const isSel = selectedClipIndices.has(idx);
       const widthPx = Math.max(48, Math.min(180, Math.round((img.durationSec || 3) * 16)));
+
+      const connectorIcon = isCut ? '✂️' : '🔀';
+      const connectorClass = isCut ? 'is-cut' : 'is-animated';
+      const connectorTitle = isCut 
+        ? `Transition #${idx + 1} ➔ #${idx + 2}: No Transition (Direct Cut) — Click to configure`
+        : `Transition #${idx + 1} ➔ #${idx + 2}: ${trans} (${override.transitionDuration ?? globalTransitionDur}s) — Click to configure`;
 
       return `
         <div class="timeline-clip-block ${isSel ? 'selected' : ''}" style="width:${widthPx}px" data-idx="${idx}" id="tl-block-${img.timestamp.total}" onclick="handleClipClick(${idx}, event)">
@@ -2267,7 +2835,7 @@
             <span class="tl-dur">${img.durationSec}s</span>
           </div>
         </div>
-        ${idx < images.length - 1 ? `<div class="tl-trans-connector" onclick="cycleClipTransition(${idx}, event)" title="Transition: ${trans}">🔀</div>` : ''}
+        ${idx < images.length - 1 ? `<div class="tl-trans-connector ${connectorClass}" onclick="openTransitionPicker(${idx}, this, event)" title="${connectorTitle}">${connectorIcon}</div>` : ''}
       `;
     }).join('');
   }
@@ -3073,6 +3641,7 @@
 
     if (e.key === 'Escape') {
       clearSelection();
+      closeTransitionPicker();
       closeSubtitleStyleModal();
       closeSubtitleModal();
       closeLightboxModal();
