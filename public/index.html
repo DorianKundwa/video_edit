@@ -289,6 +289,39 @@
       border-radius: 2px;
       width: 0%;
     }
+    .audio-track-select {
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      padding: 1px 4px;
+      max-width: 140px;
+      cursor: pointer;
+      outline: none;
+    }
+    .audio-upload-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text-dim);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .audio-upload-btn:hover {
+      background: var(--border);
+      color: var(--text);
+      transform: scale(1.05);
+    }
+    .audio-card.drag-over {
+      border-color: var(--purple-light);
+      background: rgba(99, 102, 241, 0.1);
+    }
 
     /* Subtitle Card & Upload / Transcribe Controls */
     .srt-card {
@@ -1815,12 +1848,15 @@
   <!-- ── 2. Studio Top Toolbar ──────────────────────────────────────── -->
   <div class="studio-toolbar">
     <!-- Audio Track Card -->
-    <div class="audio-card">
+    <div class="audio-card" id="audioCard" ondragover="onAudioDragOver(event)" ondragleave="onAudioDragLeave(event)" ondrop="onAudioDrop(event)">
       <button type="button" class="audio-icon-btn" id="audioPlayBtn" onclick="toggleAudioPlayback()" title="Play / Pause Master Audio">
         ▶
       </button>
       <div class="audio-info">
-        <span class="audio-name" id="audioName">untitled.mp3</span>
+        <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+          <span class="audio-name" id="audioName">untitled.mp3</span>
+          <select id="audioTrackSelect" class="audio-track-select" style="display:none;" onchange="onSelectAudioTrack(this.value)" title="Switch Audio Track"></select>
+        </div>
         <div class="audio-meta">
           <span id="audioCurrentTime">0:00</span> / <span id="audioDuration">—</span>
           <span id="audioSize">· MP3</span>
@@ -1829,6 +1865,12 @@
           <div class="audio-progress" id="audioProgress"></div>
         </div>
       </div>
+      <div class="audio-actions">
+        <button type="button" class="audio-upload-btn" id="audioUploadBtn" onclick="triggerAudioPicker(event)" title="Upload or Replace Audio File">
+          🎵
+        </button>
+      </div>
+      <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.wma,.aiff" style="display:none" onchange="handleAudioFileInput(this)" />
       <audio id="audioElement" preload="auto"></audio>
     </div>
 
@@ -2756,7 +2798,7 @@
       return;
     }
     list.innerHTML = images.map((img, idx) => {
-      const cleanName = img.name.replace(/^\[\d+-\d+\]_?/, '');
+      const cleanName = img.name.replace(/^\[\d+(?:[\-_:.]\d+)*\]_?|^(\d+[\-_:.]\d+(?:[\-_:.]\d+)?_)/, '');
       const override = clipOverrides[img.name] || {};
       const effect = override.motion || 'auto';
       const trans = override.transition || globalTransition;
@@ -3374,8 +3416,24 @@
       if (data.audio) {
         document.getElementById('audioName').textContent = data.audio.name;
         document.getElementById('audioDuration').textContent = data.audio.durationFormatted || '—';
-        document.getElementById('audioSize').textContent = `${formatBytes(data.audio.size)} · MP3`;
+        const ext = (data.audio.name.split('.').pop() || 'AUDIO').toUpperCase();
+        document.getElementById('audioSize').textContent = `${formatBytes(data.audio.size)} · ${ext}`;
         audioEl.src = `/audio/${encodeURIComponent(data.audio.name)}`;
+      } else {
+        document.getElementById('audioName').textContent = 'No Audio Found';
+        document.getElementById('audioDuration').textContent = '—';
+        document.getElementById('audioSize').textContent = 'Drop audio into audio/';
+        audioEl.removeAttribute('src');
+      }
+
+      const selectEl = document.getElementById('audioTrackSelect');
+      if (selectEl) {
+        if (data.audioFiles && data.audioFiles.length > 1) {
+          selectEl.style.display = 'inline-block';
+          selectEl.innerHTML = data.audioFiles.map(f => `<option value="${escapeHtml(f)}" ${data.audio && data.audio.name === f ? 'selected' : ''}>${escapeHtml(f)}</option>`).join('');
+        } else {
+          selectEl.style.display = 'none';
+        }
       }
 
       if (data.output) showVideo(data.output);
@@ -3389,6 +3447,70 @@
         setStatus('ready', 'Ready');
       }
     } catch {}
+  }
+
+  function triggerAudioPicker(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('audioFileInput').click();
+  }
+
+  function handleAudioFileInput(input) {
+    if (input.files && input.files[0]) uploadAudio(input.files[0]);
+    input.value = '';
+  }
+
+  function onAudioDragOver(e) {
+    e.preventDefault();
+    document.getElementById('audioCard')?.classList.add('drag-over');
+  }
+
+  function onAudioDragLeave(e) {
+    document.getElementById('audioCard')?.classList.remove('drag-over');
+  }
+
+  function onAudioDrop(e) {
+    e.preventDefault();
+    document.getElementById('audioCard')?.classList.remove('drag-over');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) uploadAudio(e.dataTransfer.files[0]);
+  }
+
+  async function uploadAudio(file) {
+    const validExts = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', '.opus', '.wma', '.aiff', '.m4b'];
+    const hasValidExt = validExts.some(ext => file.name.toLowerCase().endsWith(ext));
+    if (!hasValidExt) {
+      showToast('Please upload a valid audio file (.mp3, .wav, .m4a, .aac, .ogg, etc.)', 'error');
+      return;
+    }
+    showToast(`Uploading audio: ${file.name}...`, 'info');
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await fetch('/api/upload-audio', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      showToast(`Audio loaded: ${file.name}`, 'success');
+      await loadInfo();
+      await loadImages();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function onSelectAudioTrack(filename) {
+    try {
+      const res = await fetch('/api/select-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: filename }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to switch track');
+      showToast(`Switched active audio: ${filename}`, 'success');
+      await loadInfo();
+      await loadImages();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   async function startTranscription(e) {
@@ -3603,7 +3725,7 @@
     if (e) e.stopPropagation();
     const rawName = decodeURIComponent(encodedName);
     activeLightboxImg = { name: rawName, tsLabel, durationSec };
-    document.getElementById('lightboxTitle').innerHTML = `<span>🖼</span> Clip: ${rawName.replace(/^\[\d+-\d+\]_?/, '')}`;
+    document.getElementById('lightboxTitle').innerHTML = `<span>🖼</span> Clip: ${rawName.replace(/^\[\d+(?:[\-_:.]\d+)*\]_?|^(\d+[\-_:.]\d+(?:[\-_:.]\d+)?_)/, '')}`;
     document.getElementById('lightboxImg').src = `/image/${encodedName}`;
     document.getElementById('lightboxMeta').textContent = `Timestamp: ${tsLabel} · Duration: ${durationSec}s`;
     document.getElementById('lightboxModal').classList.add('open');

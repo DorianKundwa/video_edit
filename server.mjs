@@ -10,13 +10,42 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT         = process.env.PORT ? parseInt(process.env.PORT, 10) : 0;
 const AUDIO_DIR    = path.join(__dirname, 'audio');
 const IMAGE_DIR    = path.join(__dirname, 'image');
-const AUDIO_PATH   = path.join(__dirname, 'audio', 'untitled.mp3');
 const OUTPUT_PATH  = path.join(__dirname, 'output.mp4');
 const PUBLIC_DIR   = path.join(__dirname, 'public');
 const SUBTITLE_DIR = path.join(__dirname, 'subtitles');
 const SUBTITLE_PATH = path.join(SUBTITLE_DIR, 'subtitles.srt');
 const SUBTITLE_SETTINGS_PATH = path.join(SUBTITLE_DIR, 'settings.json');
 const TIMELINE_SETTINGS_PATH = path.join(SUBTITLE_DIR, 'timeline_settings.json');
+const AUDIO_SETTINGS_PATH    = path.join(SUBTITLE_DIR, 'audio_settings.json');
+
+const AUDIO_EXTS = new Set(['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', '.wma', '.opus', '.aiff', '.m4b']);
+
+let selectedAudioName = null;
+function getSelectedAudioName() {
+  if (selectedAudioName) return selectedAudioName;
+  if (fs.existsSync(AUDIO_SETTINGS_PATH)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(AUDIO_SETTINGS_PATH, 'utf-8'));
+      if (data?.selectedAudio) return data.selectedAudio;
+    } catch {}
+  }
+  return null;
+}
+
+function getAudioFilePath() {
+  if (!fs.existsSync(AUDIO_DIR)) return null;
+  const files = fs.readdirSync(AUDIO_DIR).filter(f => AUDIO_EXTS.has(path.extname(f).toLowerCase()));
+  if (files.length === 0) return null;
+
+  const chosen = getSelectedAudioName();
+  if (chosen && files.includes(chosen)) {
+    return path.join(AUDIO_DIR, chosen);
+  }
+
+  // Prioritize untitled.* for backwards compatibility, otherwise use the first audio file
+  const preferred = files.find(f => f.toLowerCase().startsWith('untitled')) || files[0];
+  return path.join(AUDIO_DIR, preferred);
+}
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function parseSrtCues(content) {
@@ -33,16 +62,38 @@ function parseSrtCues(content) {
   }
   return entries;
 }
+
 function parseTimestamp(filename) {
-  const m = filename.match(/^\[(\d+)-(\d+)\]/);
+  // Matches [0_00], [0-00], [0:00], [0.00], [1_02_30], [45]
+  let m = filename.match(/^\[(\d+)(?:[\-_:.](\d+))?(?:[\-_:.](\d+))?\]/);
+  if (!m) {
+    // Fallback without brackets: e.g. 0_00_..., 01-25_...
+    m = filename.match(/^(\d+)[\-_:.](\d+)(?:[\-_:.](\d+))?_/);
+  }
   if (!m) return null;
-  const min = parseInt(m[1], 10);
-  const sec = parseInt(m[2], 10);
-  return { min, sec, total: min * 60 + sec, label: `${min}:${String(sec).padStart(2, '0')}` };
+
+  let h = 0, min = 0, sec = 0;
+  if (m[3] !== undefined) {
+    h = parseInt(m[1], 10);
+    min = parseInt(m[2], 10);
+    sec = parseInt(m[3], 10);
+  } else if (m[2] !== undefined) {
+    min = parseInt(m[1], 10);
+    sec = parseInt(m[2], 10);
+  } else {
+    sec = parseInt(m[1], 10);
+    min = Math.floor(sec / 60);
+    sec = sec % 60;
+  }
+  const total = h * 3600 + min * 60 + sec;
+  const label = h > 0
+    ? `${h}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    : `${min}:${String(sec).padStart(2, '0')}`;
+  return { min, sec, total, label };
 }
 
 function getAudioInfo(filePath) {
-  if (!fs.existsSync(filePath)) return null;
+  if (!filePath || !fs.existsSync(filePath)) return null;
   const stat = fs.statSync(filePath);
   let duration = null;
   let durationFormatted = '—';
@@ -84,6 +135,13 @@ function mime(fp) {
     '.svg':  'image/svg+xml',
     '.mp3':  'audio/mpeg',
     '.wav':  'audio/wav',
+    '.m4a':  'audio/mp4',
+    '.aac':  'audio/aac',
+    '.ogg':  'audio/ogg',
+    '.flac': 'audio/flac',
+    '.opus': 'audio/opus',
+    '.wma':  'audio/x-ms-wma',
+    '.aiff': 'audio/aiff',
     '.ico':  'image/x-icon',
   }[ext] || 'application/octet-stream';
 }
@@ -254,7 +312,8 @@ const server = http.createServer((req, res) => {
         .sort((a, b) => a.timestamp.total - b.timestamp.total || a.name.localeCompare(b.name));
 
       // Compute durations with robust duplicate/equal timestamp grouping
-      const audioInfo = getAudioInfo(AUDIO_PATH);
+      const audioPath = getAudioFilePath();
+      const audioInfo = audioPath ? getAudioInfo(audioPath) : null;
       const totalAudioSec = audioInfo?.duration || (rawImages.at(-1)?.timestamp.total + 5);
 
       const rawClips = [];
@@ -314,7 +373,11 @@ const server = http.createServer((req, res) => {
 
   // ── GET /api/info ────────────────────────────────────────────────────────────
   if (path_ === '/api/info' && req.method === 'GET') {
-    const audio = getAudioInfo(AUDIO_PATH);
+    const audioPath = getAudioFilePath();
+    const audio = audioPath ? getAudioInfo(audioPath) : null;
+    const allAudioFiles = fs.existsSync(AUDIO_DIR)
+      ? fs.readdirSync(AUDIO_DIR).filter(f => AUDIO_EXTS.has(path.extname(f).toLowerCase()))
+      : [];
     const outputExists = fs.existsSync(OUTPUT_PATH);
     const outputStat = outputExists ? fs.statSync(OUTPUT_PATH) : null;
     const outputValid = outputStat && outputStat.size > 0;
@@ -328,6 +391,7 @@ const server = http.createServer((req, res) => {
     }
     return json(res, {
       audio,
+      audioFiles: allAudioFiles,
       output: outputValid ? { size: outputStat.size, mtime: outputStat.mtime } : null,
       subtitle: subtitleExists ? { name: 'subtitles.srt', size: subtitleStat.size, entries: subtitleEntries } : null,
       isGenerating,
@@ -496,6 +560,11 @@ const server = http.createServer((req, res) => {
       args.push(`--transition-duration=${transitionDurParam}`);
     }
 
+    const audioPath = getAudioFilePath();
+    if (audioPath) {
+      args.push(`--audio=${path.relative(__dirname, audioPath)}`);
+    }
+
     const modeLabel = resolution === '2k' ? '2K QHD (1440p)' : resolution === '720p' ? '720p HD DRAFT' : '1080p FULL HD';
     const effectCount = effectsParam ? effectsParam.split(',').length : 10;
     const motionLabel = isStaticMode ? 'Static Slides (No Motion)' : (effectsParam ? `${effectCount} effect${effectCount !== 1 ? 's' : ''}` : 'smooth Ken Burns');
@@ -568,6 +637,79 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ── POST /api/select-audio ──────────────────────────────────────────────────
+  if (path_ === '/api/select-audio' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c.toString());
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}');
+        const name = parsed.name;
+        if (!name || typeof name !== 'string') return json(res, { error: 'Invalid audio name' }, 400);
+        const target = path.join(AUDIO_DIR, path.basename(name));
+        if (!fs.existsSync(target)) return json(res, { error: 'Audio file does not exist' }, 404);
+
+        selectedAudioName = path.basename(name);
+        if (!fs.existsSync(SUBTITLE_DIR)) fs.mkdirSync(SUBTITLE_DIR, { recursive: true });
+        fs.writeFileSync(AUDIO_SETTINGS_PATH, JSON.stringify({ selectedAudio: selectedAudioName }, null, 2), 'utf-8');
+
+        const audioInfo = getAudioInfo(target);
+        return json(res, { ok: true, audio: audioInfo });
+      } catch (e) {
+        return json(res, { error: e.message }, 500);
+      }
+    });
+    return;
+  }
+
+  // ── POST /api/upload-audio ──────────────────────────────────────────────────
+  if (path_ === '/api/upload-audio' && req.method === 'POST') {
+    const contentType = req.headers['content-type'] || '';
+    const boundaryMatch = contentType.match(/boundary=([^;]+)/);
+    if (!boundaryMatch) return json(res, { error: 'Missing multipart boundary' }, 400);
+    const boundary = boundaryMatch[1].trim();
+
+    const chunks = [];
+    req.on('data', c => chunks.push(c));
+    req.on('end', () => {
+      try {
+        const body = Buffer.concat(chunks);
+        const bodyStr = body.toString('binary');
+
+        const dispMatch = bodyStr.match(/Content-Disposition:[^\r\n]*filename="([^"]+)"/i);
+        let origName = dispMatch ? path.basename(dispMatch[1]) : 'audio.mp3';
+        origName = origName.replace(/[^\w\d.\-_\s()\[\]]/g, '_');
+        const ext = path.extname(origName).toLowerCase();
+        if (!AUDIO_EXTS.has(ext)) {
+          return json(res, { error: `Unsupported audio format (${ext}). Supported: ${[...AUDIO_EXTS].join(', ')}` }, 400);
+        }
+
+        const startMarker = '\r\n\r\n';
+        const endMarker = `\r\n--${boundary}`;
+        const startIdx = bodyStr.indexOf(startMarker);
+        const endIdx   = bodyStr.indexOf(endMarker, startIdx + startMarker.length);
+        if (startIdx === -1 || endIdx === -1) return json(res, { error: 'Malformed multipart body' }, 400);
+
+        const fileContent = body.slice(startIdx + startMarker.length, endIdx);
+
+        if (!fs.existsSync(AUDIO_DIR)) fs.mkdirSync(AUDIO_DIR, { recursive: true });
+        const targetPath = path.join(AUDIO_DIR, origName);
+        fs.writeFileSync(targetPath, fileContent);
+
+        selectedAudioName = origName;
+        if (!fs.existsSync(SUBTITLE_DIR)) fs.mkdirSync(SUBTITLE_DIR, { recursive: true });
+        fs.writeFileSync(AUDIO_SETTINGS_PATH, JSON.stringify({ selectedAudio: selectedAudioName }, null, 2), 'utf-8');
+
+        const audioInfo = getAudioInfo(targetPath);
+        return json(res, { ok: true, audio: audioInfo });
+      } catch (e) {
+        return json(res, { error: e.message }, 500);
+      }
+    });
+    req.on('error', e => json(res, { error: e.message }, 500));
+    return;
+  }
+
   // ── POST /api/upload-srt ─────────────────────────────────────────────────────
   if (path_ === '/api/upload-srt' && req.method === 'POST') {
     const contentType = req.headers['content-type'] || '';
@@ -623,6 +765,9 @@ const server = http.createServer((req, res) => {
   if (path_ === '/api/transcribe' && req.method === 'POST') {
     if (isGenerating) return json(res, { error: 'A render or transcription is already running' }, 409);
 
+    const audioPath = getAudioFilePath();
+    if (!audioPath) return json(res, { error: 'No audio file found in audio/ folder' }, 400);
+
     isGenerating = true;
 
     res.writeHead(200, {
@@ -632,9 +777,9 @@ const server = http.createServer((req, res) => {
     });
 
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
-    send({ type: 'start', message: '🎤 Whisper transcription started (model: base)...' });
+    send({ type: 'start', message: `🎤 Whisper transcription started for ${path.basename(audioPath)} (model: base)...` });
 
-    activeProc = spawn('node', ['transcribe.mjs'], { cwd: __dirname });
+    activeProc = spawn('node', ['transcribe.mjs', audioPath], { cwd: __dirname });
 
     let tbuf = '';
     const handleTChunk = (chunk) => {

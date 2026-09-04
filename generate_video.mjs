@@ -5,20 +5,47 @@
 // 3. Exact audio & subtitle sync with customizable ASS typography overlay.
 
 import { readdirSync, existsSync, writeFileSync, readFileSync, unlinkSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { resolve, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync, spawn } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const IMAGE_DIR             = resolve(__dirname, 'image');
-const AUDIO_PATH            = resolve(__dirname, 'audio/untitled.mp3');
+const AUDIO_DIR             = resolve(__dirname, 'audio');
 const OUTPUT_PATH           = resolve(__dirname, 'output.mp4');
 const FILTER_FILE           = resolve(__dirname, 'filter_complex.txt');
 const SUBTITLE_PATH         = resolve(__dirname, 'subtitles/subtitles.srt');
 const ASS_PATH              = resolve(__dirname, 'subtitles/subtitles.ass');
 const TIMELINE_SETTINGS_PATH = resolve(__dirname, 'subtitles/timeline_settings.json');
 const SUBTITLE_SETTINGS_PATH = resolve(__dirname, 'subtitles/settings.json');
+
+const AUDIO_EXTS = new Set(['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', '.wma', '.opus', '.aiff', '.m4b']);
+
+function findAudioFile() {
+  const cliAudio = process.argv.find(a => a.startsWith('--audio='));
+  if (cliAudio) {
+    const p = resolve(__dirname, cliAudio.slice('--audio='.length));
+    if (existsSync(p)) return p;
+  }
+  const audioSettingsPath = resolve(__dirname, 'subtitles/audio_settings.json');
+  if (existsSync(audioSettingsPath)) {
+    try {
+      const data = JSON.parse(readFileSync(audioSettingsPath, 'utf-8'));
+      if (data?.selectedAudio) {
+        const p = resolve(AUDIO_DIR, data.selectedAudio);
+        if (existsSync(p)) return p;
+      }
+    } catch {}
+  }
+  if (!existsSync(AUDIO_DIR)) return null;
+  const files = readdirSync(AUDIO_DIR).filter(f => AUDIO_EXTS.has(extname(f).toLowerCase()));
+  if (files.length === 0) return null;
+  const preferred = files.find(f => f.toLowerCase().startsWith('untitled')) || files[0];
+  return resolve(AUDIO_DIR, preferred);
+}
+
+const AUDIO_PATH = findAudioFile() || resolve(__dirname, 'audio/untitled.mp3');
 
 const isFast   = process.argv.includes('--fast');
 const is2K     = process.argv.includes('--2k');
@@ -55,11 +82,27 @@ function getAudioDuration(filePath) {
 
 // ── 2. Collect & Sort Images ─────────────────────────────────────────────────
 function parseTimestamp(filename) {
-  const m = filename.match(/^\[(\d+)-(\d+)\]/);
+  // Matches [0_00], [0-00], [0:00], [0.00], [1_02_30], [45]
+  let m = filename.match(/^\[(\d+)(?:[\-_:.](\d+))?(?:[\-_:.](\d+))?\]/);
+  if (!m) {
+    m = filename.match(/^(\d+)[\-_:.](\d+)(?:[\-_:.](\d+))?_/);
+  }
   if (!m) return null;
-  const min = parseInt(m[1], 10);
-  const sec = parseInt(m[2], 10);
-  return min * 60 + sec;
+
+  let h = 0, min = 0, sec = 0;
+  if (m[3] !== undefined) {
+    h = parseInt(m[1], 10);
+    min = parseInt(m[2], 10);
+    sec = parseInt(m[3], 10);
+  } else if (m[2] !== undefined) {
+    min = parseInt(m[1], 10);
+    sec = parseInt(m[2], 10);
+  } else {
+    sec = parseInt(m[1], 10);
+    min = Math.floor(sec / 60);
+    sec = sec % 60;
+  }
+  return h * 3600 + min * 60 + sec;
 }
 
 if (!existsSync(IMAGE_DIR)) {
